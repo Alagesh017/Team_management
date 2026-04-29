@@ -35,6 +35,7 @@ def decode_jwt_token(token):
 
 
 def token_required(f):
+    print(f)
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get("Authorization")

@@ -3,26 +3,62 @@ import bcrypt
 from src import db
 from flask import jsonify, request
 from src.models.user_model import User
+from src.models.admin_model import Admin
+from src.models.worker_model import Worker
 from src.utils.jwt import decode_jwt_token, generate_jwt_token
 
-
 def register_controller():
-
     try:
-
         data = request.get_json()
 
-        username = data.get("username")
+        email = data.get("email")
         password = data.get("password")
-        role = data.get("role", "user")
+        role = data.get("role")
+        first_name = data.get("first_name")
+        last_name = data.get("last_name")
+        phone = data.get("phone")
 
-        if User.query.filter_by(username=username).first():
-            return jsonify({"msg": "User already exists", "success": 2})
+        if not all([email, password, role, first_name, last_name]):
+            return jsonify({"msg": "Missing required fields", "status": 0}), 400
+
+        valid_roles = ["superadmin", "admin", "scrum", "team_leader", "worker"]
+        if role not in valid_roles:
+            return jsonify({"msg": f"Invalid role. Must be one of {valid_roles}", "status": 0}), 400
+
+        if User.query.filter_by(email=email).first():
+            return jsonify({"msg": "User with this email already exists", "status": 0}), 409
 
         hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
+        # Create Admin or Worker based on role
+        role_id = None
+        if role in ["superadmin", "admin", "scrum"]:
+            new_person = Admin(
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone,
+                is_superadmin=(role == "superadmin"),
+                is_admin=(role == "admin"),
+                is_scrum=(role == "scrum")
+            )
+            db.session.add(new_person)
+            db.session.flush()
+            role_id = new_person.id
+            
+        elif role in ["team_leader", "worker"]:
+            new_person = Worker(
+                first_name=first_name,
+                last_name=last_name,
+                phone=phone,
+                is_tl=(role == "team_leader"),
+                is_worker=(role == "worker")
+            )
+            db.session.add(new_person)
+            db.session.flush()
+            role_id = new_person.id
+
         new_user = User(
-            username=username, password=hashed_password.decode("utf-8"), role=role
+            email=email, password=hashed_password.decode("utf-8"), role=role, role_id=role_id
         )
 
         db.session.add(new_user)
@@ -32,36 +68,28 @@ def register_controller():
 
     except Exception as e:
         db.session.rollback()
-        return (jsonify({"success": 0, "error": str(e)}), 500)
+        return jsonify({"success": 0, "error": str(e)}), 500
 
 
 def login_controller():
-
     try:
-
         data = request.get_json()
 
-        username = data.get("username")
+        email = data.get("email")
         password = data.get("password")
 
-        if not username or not password:
-            return (
-                jsonify({"message": "Username and password required", "status": 0}),
-                400,
-            )
+        if not email or not password:
+            return jsonify({"message": "Email and password required", "status": 0}), 400
 
-        user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(email=email).first()
 
         if not user or not bcrypt.checkpw(
             password.encode("utf-8"), user.password.encode("utf-8")
         ):
-            return jsonify({"message": "Invalid credentials", "status": 0})
+            return jsonify({"message": "Invalid credentials", "status": 0}), 401
 
-        additional_claims = {
-            "user_id": user.id,
-            "username": user.username,
-            "role": user.role,
-        }
+        if not user.is_active:
+            return jsonify({"message": "User account is inactive", "status": 0}), 403
 
         access_token = generate_jwt_token(user.id)
         refresh_token = generate_jwt_token(user.id, is_refresh=True)
@@ -70,35 +98,25 @@ def login_controller():
         user.refresh_token_created_at = datetime.datetime.utcnow()
         db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "message": "Login successful",
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "username": user.username,
-                    "role": user.role,
-                    "status": 1,
-                }
-            ),
-            200,
-        )
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "email": user.email,
+            "role": user.role,
+            "status": 1,
+        }), 200
 
     except Exception as e:
         db.session.rollback()
-        return (jsonify({"success": 0, "error": str(e)}), 500)
+        return jsonify({"success": 0, "error": str(e)}), 500
 
 
 def token_refresh_controller():
-
     try:
-
         refresh_token = request.headers.get("Authorization")
         if not refresh_token or not refresh_token.startswith("Bearer "):
-            return (
-                jsonify({"message": "Refresh token missing or invalid", "status": 0}),
-                400,
-            )
+            return jsonify({"message": "Refresh token missing or invalid", "status": 0}), 400
 
         refresh_token = refresh_token.split(" ")[1]
 
@@ -115,19 +133,15 @@ def token_refresh_controller():
         new_refresh_token = generate_jwt_token(user.id, is_refresh=True)
 
         user.refresh_token = new_refresh_token
-        user.token_created_at = datetime.datetime.utcnow()
+        user.refresh_token_created_at = datetime.datetime.utcnow() # Fixed typo from token_created_at
         db.session.commit()
 
-        return (
-            jsonify(
-                {
-                    "message": "Access token refreshed",
-                    "access_token": new_access_token,
-                    "refresh_token": new_refresh_token,
-                    "status": 1,
-                }
-            ),
-            200,
-        )
+        return jsonify({
+            "message": "Access token refreshed",
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token,
+            "status": 1,
+        }), 200
+        
     except Exception as e:
-        return (jsonify({"success": 0, "error": str(e)}), 500)
+        return jsonify({"success": 0, "error": str(e)}), 500
