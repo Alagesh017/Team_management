@@ -3,3 +3,9 @@ from src.models.admin_model import Admin
 from src.models.worker_model import Worker
 from src.models.skill_model import Skill
 from src.models.education_model import Education
+from src.models.client_model import Client
+from src.models.task_status_model import TaskStatus
+from src.models.project_model import Project
+from src.models.project_allocation_model import ProjectAllocation
+from src.models.task_model import Task
+from src.models.sub_task_model import SubTask
