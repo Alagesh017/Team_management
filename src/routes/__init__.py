@@ -8,6 +8,10 @@ from src.routes.project_allocation_route import project_allocation_bp
 from src.routes.task_route import task_bp
 from src.routes.sub_task_route import sub_task_bp
 from src.routes.task_comment_route import task_comment_bp
+from src.routes.task_attachment_route import task_attachment_bp
+from src.routes.meeting_route import meeting_bp
+from src.routes.meeting_message_route import meeting_message_bp
+from src.routes.leave_request_route import leave_request_bp
 
 def init_routes(app):
     app.register_blueprint(auth_bp)
@@ -20,4 +24,8 @@ def init_routes(app):
     app.register_blueprint(task_bp)
     app.register_blueprint(sub_task_bp)
     app.register_blueprint(task_comment_bp)
+    app.register_blueprint(task_attachment_bp)
+    app.register_blueprint(meeting_bp)
+    app.register_blueprint(meeting_message_bp)
+    app.register_blueprint(leave_request_bp)
 

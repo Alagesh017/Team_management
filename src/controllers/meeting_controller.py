@@ -1,0 +1,160 @@
+from flask import jsonify, request
+import datetime
+from src import db
+from src.models.meeting_model import Meeting
+
+def create_meeting(decoded_payload):
+    try:
+        data = request.get_json()
+        
+        project_id = data.get("project_id")
+        allocation_id = data.get("allocation_id")
+        client_id = data.get("client_id")
+        title = data.get("title")
+        members = data.get("members")
+        requirements = data.get("requirements")
+        meeting_date_str = data.get("meeting_date")
+        start_time_str = data.get("start_time")
+        end_time_str = data.get("end_time")
+        status = data.get("status", "scheduled")
+        remark = data.get("remark")
+        
+        created_by = decoded_payload.get("user_id")
+
+        if not all([project_id, title, members, meeting_date_str, start_time_str]):
+            return jsonify({"msg": "Project ID, Title, Members, Date, and Start Time are required", "status": 0}), 400
+
+        try:
+            meeting_date = datetime.datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
+            start_time = datetime.datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.datetime.strptime(end_time_str, '%H:%M').time() if end_time_str else None
+        except ValueError:
+            return jsonify({"msg": "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time", "status": 0}), 400
+
+        new_meeting = Meeting(
+            project_id=project_id,
+            allocation_id=allocation_id,
+            client_id=client_id,
+            title=title,
+            members=members,
+            requirements=requirements,
+            meeting_date=meeting_date,
+            start_time=start_time,
+            end_time=end_time,
+            status=status,
+            remark=remark,
+            created_by=created_by
+        )
+        db.session.add(new_meeting)
+        db.session.commit()
+        
+        return jsonify({"msg": "Meeting scheduled successfully", "status": 1, "meeting_id": new_meeting.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+def get_all_meetings():
+    try:
+        meetings = Meeting.query.all()
+        result = []
+        for meeting in meetings:
+            result.append({
+                "id": meeting.id,
+                "project_id": meeting.project_id,
+                "project_name": meeting.project.name if meeting.project else None,
+                "allocation_id": meeting.allocation_id,
+                "client_id": meeting.client_id,
+                "client_name": meeting.client.name if meeting.client else None,
+                "title": meeting.title,
+                "members": meeting.members,
+                "requirements": meeting.requirements,
+                "meeting_date": meeting.meeting_date.isoformat() if meeting.meeting_date else None,
+                "start_time": meeting.start_time.strftime('%H:%M') if meeting.start_time else None,
+                "end_time": meeting.end_time.strftime('%H:%M') if meeting.end_time else None,
+                "status": meeting.status,
+                "remark": meeting.remark,
+                "created_by": meeting.created_by,
+                "creator_email": meeting.creator.email if meeting.creator else None,
+                "created_at": meeting.created_at.isoformat() if meeting.created_at else None
+            })
+        return jsonify({"meetings": result, "status": 1}), 200
+    except Exception as e:
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+def get_meeting_by_id(meeting_id):
+    try:
+        meeting = Meeting.query.get(meeting_id)
+        if not meeting:
+            return jsonify({"message": "Meeting not found", "status": 0}), 404
+        
+        result = {
+            "id": meeting.id,
+            "project_id": meeting.project_id,
+            "project_name": meeting.project.name if meeting.project else None,
+            "allocation_id": meeting.allocation_id,
+            "client_id": meeting.client_id,
+            "client_name": meeting.client.name if meeting.client else None,
+            "title": meeting.title,
+            "members": meeting.members,
+            "requirements": meeting.requirements,
+            "meeting_date": meeting.meeting_date.isoformat() if meeting.meeting_date else None,
+            "start_time": meeting.start_time.strftime('%H:%M') if meeting.start_time else None,
+            "end_time": meeting.end_time.strftime('%H:%M') if meeting.end_time else None,
+            "status": meeting.status,
+            "remark": meeting.remark,
+            "created_by": meeting.created_by,
+            "creator_email": meeting.creator.email if meeting.creator else None,
+            "created_at": meeting.created_at.isoformat() if meeting.created_at else None
+        }
+        return jsonify({"meeting": result, "status": 1}), 200
+    except Exception as e:
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+def update_meeting(meeting_id):
+    try:
+        meeting = Meeting.query.get(meeting_id)
+        if not meeting:
+            return jsonify({"message": "Meeting not found", "status": 0}), 404
+        
+        data = request.get_json()
+        
+        meeting.project_id = data.get("project_id", meeting.project_id)
+        meeting.allocation_id = data.get("allocation_id", meeting.allocation_id)
+        meeting.client_id = data.get("client_id", meeting.client_id)
+        meeting.title = data.get("title", meeting.title)
+        meeting.members = data.get("members", meeting.members)
+        meeting.requirements = data.get("requirements", meeting.requirements)
+        
+        meeting_date_str = data.get("meeting_date")
+        if meeting_date_str:
+            meeting.meeting_date = datetime.datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
+            
+        start_time_str = data.get("start_time")
+        if start_time_str:
+            meeting.start_time = datetime.datetime.strptime(start_time_str, '%H:%M').time()
+            
+        end_time_str = data.get("end_time")
+        if end_time_str:
+            meeting.end_time = datetime.datetime.strptime(end_time_str, '%H:%M').time()
+            
+        meeting.status = data.get("status", meeting.status)
+        meeting.remark = data.get("remark", meeting.remark)
+        
+        db.session.commit()
+        return jsonify({"msg": "Meeting updated successfully", "status": 1}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+def delete_meeting(meeting_id):
+    try:
+        meeting = Meeting.query.get(meeting_id)
+        if not meeting:
+            return jsonify({"message": "Meeting not found", "status": 0}), 404
+        
+        db.session.delete(meeting)
+        db.session.commit()
+        return jsonify({"msg": "Meeting deleted successfully", "status": 1}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500

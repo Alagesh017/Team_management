@@ -10,3 +10,8 @@ from src.models.project_allocation_model import ProjectAllocation
 from src.models.task_model import Task
 from src.models.sub_task_model import SubTask
 from src.models.task_comment_model import TaskComment
+from src.models.task_attachment_model import TaskAttachment
+from src.models.meeting_model import Meeting
+from src.models.meeting_message_model import MeetingMessage
+from src.models.leave_request_model import LeaveRequest
+from src.models.activity_log_model import ActivityLog
