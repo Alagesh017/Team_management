@@ -7,6 +7,7 @@ from src.routes.project_route import project_bp
 from src.routes.project_allocation_route import project_allocation_bp
 from src.routes.task_route import task_bp
 from src.routes.sub_task_route import sub_task_bp
+from src.routes.task_comment_route import task_comment_bp
 
 def init_routes(app):
     app.register_blueprint(auth_bp)
@@ -18,4 +19,5 @@ def init_routes(app):
     app.register_blueprint(project_allocation_bp)
     app.register_blueprint(task_bp)
     app.register_blueprint(sub_task_bp)
+    app.register_blueprint(task_comment_bp)
 

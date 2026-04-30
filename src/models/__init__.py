@@ -9,3 +9,4 @@ from src.models.project_model import Project
 from src.models.project_allocation_model import ProjectAllocation
 from src.models.task_model import Task
 from src.models.sub_task_model import SubTask
+from src.models.task_comment_model import TaskComment
