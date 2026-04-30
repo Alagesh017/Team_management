@@ -12,6 +12,7 @@ from src.routes.task_attachment_route import task_attachment_bp
 from src.routes.meeting_route import meeting_bp
 from src.routes.meeting_message_route import meeting_message_bp
 from src.routes.leave_request_route import leave_request_bp
+from src.routes.activity_log_route import activity_log_bp
 
 def init_routes(app):
     app.register_blueprint(auth_bp)
@@ -28,4 +29,5 @@ def init_routes(app):
     app.register_blueprint(meeting_bp)
     app.register_blueprint(meeting_message_bp)
     app.register_blueprint(leave_request_bp)
+    app.register_blueprint(activity_log_bp)
 
