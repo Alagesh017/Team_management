@@ -10,7 +10,7 @@ ALGORITHM = "HS256"
 
 def generate_jwt_token(userid, is_refresh=False):
     expiration = datetime.datetime.utcnow() + (
-        datetime.timedelta(days=7) if is_refresh else datetime.timedelta(seconds=30)
+        datetime.timedelta(days=7) if is_refresh else datetime.timedelta(minutes=5)
     )
 
     payload = {

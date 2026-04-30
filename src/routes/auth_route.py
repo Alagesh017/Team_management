@@ -11,6 +11,7 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 # Register route
 @auth_bp.route("/register", methods=["POST"])
 def register():
+    print("Registering") 
     return register_controller()
 
 
