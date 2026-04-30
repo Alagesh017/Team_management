@@ -12,13 +12,13 @@ def register_controller():
         data = request.get_json()
 
         email = data.get("email")
-        password = data.get("password")
+        password = "Dce@2026"
         role = data.get("role")
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
 
-        if not all([email, password, role, first_name, last_name]):
+        if not all([email, role, first_name, last_name]):
             return jsonify({"msg": "Missing required fields", "status": 0}), 400
 
         valid_roles = ["superadmin", "admin", "scrum", "team_leader", "worker"]
@@ -96,6 +96,13 @@ def login_controller():
 
         user.refresh_token = refresh_token
         user.refresh_token_created_at = datetime.datetime.utcnow()
+        
+        # Update last_login for Admin if applicable
+        if user.role in ["superadmin", "admin", "scrum"]:
+            admin = Admin.query.get(user.role_id)
+            if admin:
+                admin.last_login = datetime.datetime.utcnow()
+                
         db.session.commit()
 
         return jsonify({

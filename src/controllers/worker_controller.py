@@ -18,6 +18,25 @@ def create_worker():
         is_worker = data.get("is_worker", False)
         remark = data.get("remark")
 
+        job_title = data.get("job_title")
+        department = data.get("department")
+        experience_years = data.get("experience_years")
+        working_hours = data.get("working_hours")
+        work_mode = data.get("work_mode")
+        office_location = data.get("office_location")
+        github_url = data.get("github_url")
+        linkedin_url = data.get("linkedin_url")
+        portfolio_url = data.get("portfolio_url")
+        address_line1 = data.get("address_line1")
+        address_line2 = data.get("address_line2")
+        city = data.get("city")
+        state = data.get("state")
+        country = data.get("country")
+        pincode = data.get("pincode")
+        joining_date = data.get("joining_date")
+        employment_type = data.get("employment_type")
+        status = data.get("status", "ACTIVE")
+
         if not all([email, first_name, last_name]):
             return jsonify({"msg": "Missing required fields", "status": 0}), 400
 
@@ -38,8 +57,27 @@ def create_worker():
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            email=email,
             is_tl=is_tl,
             is_worker=is_worker,
+            job_title=job_title,
+            department=department,
+            experience_years=experience_years,
+            working_hours=working_hours,
+            work_mode=work_mode,
+            office_location=office_location,
+            github_url=github_url,
+            linkedin_url=linkedin_url,
+            portfolio_url=portfolio_url,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            state=state,
+            country=country,
+            pincode=pincode,
+            joining_date=joining_date,
+            employment_type=employment_type,
+            status=status,
             remark=remark
         )
         db.session.add(new_worker)
@@ -68,11 +106,30 @@ def get_all_workers():
                 "first_name": worker.first_name,
                 "last_name": worker.last_name,
                 "phone": worker.phone,
+                "email": worker.email,
                 "avatar_url": worker.avatar_url,
                 "is_tl": worker.is_tl,
                 "is_worker": worker.is_worker,
+                "job_title": worker.job_title,
+                "department": worker.department,
+                "experience_years": worker.experience_years,
+                "working_hours": worker.working_hours,
+                "work_mode": worker.work_mode,
+                "office_location": worker.office_location,
+                "github_url": worker.github_url,
+                "linkedin_url": worker.linkedin_url,
+                "portfolio_url": worker.portfolio_url,
+                "address_line1": worker.address_line1,
+                "address_line2": worker.address_line2,
+                "city": worker.city,
+                "state": worker.state,
+                "country": worker.country,
+                "pincode": worker.pincode,
+                "joining_date": worker.joining_date,
+                "employment_type": worker.employment_type,
+                "status": worker.status,
                 "remark": worker.remark,
-                "email": user.email if user else None,
+                "user_email": user.email if user else None,
                 "is_active": user.is_active if user else None
             })
         return jsonify({"workers": result, "status": 1}), 200
@@ -91,11 +148,30 @@ def get_worker_by_id(worker_id):
             "first_name": worker.first_name,
             "last_name": worker.last_name,
             "phone": worker.phone,
+            "email": worker.email,
             "avatar_url": worker.avatar_url,
             "is_tl": worker.is_tl,
             "is_worker": worker.is_worker,
+            "job_title": worker.job_title,
+            "department": worker.department,
+            "experience_years": worker.experience_years,
+            "working_hours": worker.working_hours,
+            "work_mode": worker.work_mode,
+            "office_location": worker.office_location,
+            "github_url": worker.github_url,
+            "linkedin_url": worker.linkedin_url,
+            "portfolio_url": worker.portfolio_url,
+            "address_line1": worker.address_line1,
+            "address_line2": worker.address_line2,
+            "city": worker.city,
+            "state": worker.state,
+            "country": worker.country,
+            "pincode": worker.pincode,
+            "joining_date": worker.joining_date,
+            "employment_type": worker.employment_type,
+            "status": worker.status,
             "remark": worker.remark,
-            "email": user.email if user else None,
+            "user_email": user.email if user else None,
             "is_active": user.is_active if user else None
         }
         return jsonify({"worker": result, "status": 1}), 200
@@ -117,12 +193,50 @@ def update_worker(worker_id):
             worker.last_name = data["last_name"]
         if "phone" in data:
             worker.phone = data["phone"]
+        if "email" in data:
+            worker.email = data["email"]
         if "avatar_url" in data:
             worker.avatar_url = data["avatar_url"]
         if "is_tl" in data:
             worker.is_tl = data["is_tl"]
         if "is_worker" in data:
             worker.is_worker = data["is_worker"]
+        if "job_title" in data:
+            worker.job_title = data["job_title"]
+        if "department" in data:
+            worker.department = data["department"]
+        if "experience_years" in data:
+            worker.experience_years = data["experience_years"]
+        if "working_hours" in data:
+            worker.working_hours = data["working_hours"]
+        if "work_mode" in data:
+            worker.work_mode = data["work_mode"]
+        if "office_location" in data:
+            worker.office_location = data["office_location"]
+        if "github_url" in data:
+            worker.github_url = data["github_url"]
+        if "linkedin_url" in data:
+            worker.linkedin_url = data["linkedin_url"]
+        if "portfolio_url" in data:
+            worker.portfolio_url = data["portfolio_url"]
+        if "address_line1" in data:
+            worker.address_line1 = data["address_line1"]
+        if "address_line2" in data:
+            worker.address_line2 = data["address_line2"]
+        if "city" in data:
+            worker.city = data["city"]
+        if "state" in data:
+            worker.state = data["state"]
+        if "country" in data:
+            worker.country = data["country"]
+        if "pincode" in data:
+            worker.pincode = data["pincode"]
+        if "joining_date" in data:
+            worker.joining_date = data["joining_date"]
+        if "employment_type" in data:
+            worker.employment_type = data["employment_type"]
+        if "status" in data:
+            worker.status = data["status"]
         if "remark" in data:
             worker.remark = data["remark"]
             

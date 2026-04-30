@@ -19,6 +19,20 @@ def create_admin():
         is_scrum = data.get("is_scrum", False)
         remark = data.get("remark")
 
+        experience_years = data.get("experience_years")
+        working_hours = data.get("working_hours")
+        work_mode = data.get("work_mode")
+        office_location = data.get("office_location")
+        linkedin_url = data.get("linkedin_url")
+        address_line1 = data.get("address_line1")
+        address_line2 = data.get("address_line2")
+        city = data.get("city")
+        state = data.get("state")
+        country = data.get("country")
+        pincode = data.get("pincode")
+        status = data.get("status", "ACTIVE")
+        joining_date = data.get("joining_date")
+
         if not all([email, first_name, last_name]):
             return jsonify({"msg": "Missing required fields", "status": 0}), 400
 
@@ -41,9 +55,23 @@ def create_admin():
             first_name=first_name,
             last_name=last_name,
             phone=phone,
+            email=email,
             is_superadmin=is_superadmin,
             is_admin=is_admin,
             is_scrum=is_scrum,
+            experience_years=experience_years,
+            working_hours=working_hours,
+            work_mode=work_mode,
+            office_location=office_location,
+            linkedin_url=linkedin_url,
+            address_line1=address_line1,
+            address_line2=address_line2,
+            city=city,
+            state=state,
+            country=country,
+            pincode=pincode,
+            status=status,
+            joining_date=joining_date,
             remark=remark
         )
         db.session.add(new_admin)
@@ -72,12 +100,27 @@ def get_all_admins():
                 "first_name": admin.first_name,
                 "last_name": admin.last_name,
                 "phone": admin.phone,
+                "email": admin.email,
                 "avatar_url": admin.avatar_url,
                 "is_superadmin": admin.is_superadmin,
                 "is_admin": admin.is_admin,
                 "is_scrum": admin.is_scrum,
+                "experience_years": admin.experience_years,
+                "working_hours": admin.working_hours,
+                "work_mode": admin.work_mode,
+                "office_location": admin.office_location,
+                "linkedin_url": admin.linkedin_url,
+                "address_line1": admin.address_line1,
+                "address_line2": admin.address_line2,
+                "city": admin.city,
+                "state": admin.state,
+                "country": admin.country,
+                "pincode": admin.pincode,
+                "status": admin.status,
+                "last_login": admin.last_login,
+                "joining_date": admin.joining_date,
                 "remark": admin.remark,
-                "email": user.email if user else None,
+                "user_email": user.email if user else None,
                 "is_active": user.is_active if user else None
             })
         return jsonify({"admins": result, "status": 1}), 200
@@ -96,12 +139,27 @@ def get_admin_by_id(admin_id):
             "first_name": admin.first_name,
             "last_name": admin.last_name,
             "phone": admin.phone,
+            "email": admin.email,
             "avatar_url": admin.avatar_url,
             "is_superadmin": admin.is_superadmin,
             "is_admin": admin.is_admin,
             "is_scrum": admin.is_scrum,
+            "experience_years": admin.experience_years,
+            "working_hours": admin.working_hours,
+            "work_mode": admin.work_mode,
+            "office_location": admin.office_location,
+            "linkedin_url": admin.linkedin_url,
+            "address_line1": admin.address_line1,
+            "address_line2": admin.address_line2,
+            "city": admin.city,
+            "state": admin.state,
+            "country": admin.country,
+            "pincode": admin.pincode,
+            "status": admin.status,
+            "last_login": admin.last_login,
+            "joining_date": admin.joining_date,
             "remark": admin.remark,
-            "email": user.email if user else None,
+            "user_email": user.email if user else None,
             "is_active": user.is_active if user else None
         }
         return jsonify({"admin": result, "status": 1}), 200
@@ -121,6 +179,8 @@ def update_admin(admin_id):
             admin.first_name = data["first_name"]
         if "last_name" in data:
             admin.last_name = data["last_name"]
+        if "email" in data:
+            admin.email = data["email"]
         if "phone" in data:
             admin.phone = data["phone"]
         if "avatar_url" in data:
@@ -131,6 +191,32 @@ def update_admin(admin_id):
             admin.is_admin = data["is_admin"]
         if "is_scrum" in data:
             admin.is_scrum = data["is_scrum"]
+        if "experience_years" in data:
+            admin.experience_years = data["experience_years"]
+        if "working_hours" in data:
+            admin.working_hours = data["working_hours"]
+        if "work_mode" in data:
+            admin.work_mode = data["work_mode"]
+        if "office_location" in data:
+            admin.office_location = data["office_location"]
+        if "linkedin_url" in data:
+            admin.linkedin_url = data["linkedin_url"]
+        if "address_line1" in data:
+            admin.address_line1 = data["address_line1"]
+        if "address_line2" in data:
+            admin.address_line2 = data["address_line2"]
+        if "city" in data:
+            admin.city = data["city"]
+        if "state" in data:
+            admin.state = data["state"]
+        if "country" in data:
+            admin.country = data["country"]
+        if "pincode" in data:
+            admin.pincode = data["pincode"]
+        if "status" in data:
+            admin.status = data["status"]
+        if "joining_date" in data:
+            admin.joining_date = data["joining_date"]
         if "remark" in data:
             admin.remark = data["remark"]
             
