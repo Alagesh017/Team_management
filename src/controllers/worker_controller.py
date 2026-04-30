@@ -9,7 +9,7 @@ def create_worker():
         data = request.get_json()
         
         email = data.get("email")
-        password = data.get("password")
+        password = "Dce@2026"
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
@@ -18,7 +18,7 @@ def create_worker():
         is_worker = data.get("is_worker", False)
         remark = data.get("remark")
 
-        if not all([email, password, first_name, last_name]):
+        if not all([email, first_name, last_name]):
             return jsonify({"msg": "Missing required fields", "status": 0}), 400
 
         if User.query.filter_by(email=email).first():
