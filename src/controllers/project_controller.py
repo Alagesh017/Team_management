@@ -2,8 +2,11 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.project_model import Project
+from src.models.user_model import User
+from src.utils.date_utils import parse_date
+from src.utils.image_utils import save_image
 
-def create_project(decoded_payload):
+def create_project(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -14,18 +17,33 @@ def create_project(decoded_payload):
         end_date_str = data.get("end_date")
         status = data.get("status", "active")
         remark = data.get("remark")
+        project_logo = data.get("project_logo")
         
-        # User ID from the decoded JWT token
-        created_by = decoded_payload.get("user_id")
+        # Save project logo if provided as base64
+        saved_logo_url = save_image(project_logo, folder="project_logos")
+        final_logo_url = saved_logo_url if saved_logo_url else project_logo
+        
+        # User ID from the decoded JWT token or default for testing
+        created_by = None
+        if decoded_payload:
+            created_by = decoded_payload.get("user_id")
+        else:
+            # Fallback for testing: get the first user from the database
+            first_user = User.query.first()
+            if first_user:
+                created_by = first_user.id
+            else:
+                # If no user exists at all, we can't create a project due to FK constraint
+                return jsonify({"msg": "No users found in database. Please create a user first.", "status": 0}), 400
 
         if not all([name, start_date_str, end_date_str]):
             return jsonify({"msg": "Project name, start date, and end date are required", "status": 0}), 400
 
-        try:
-            start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
-            end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date()
-        except ValueError:
-            return jsonify({"msg": "Invalid date format. Use YYYY-MM-DD", "status": 0}), 400
+        start_date = parse_date(start_date_str)
+        end_date = parse_date(end_date_str)
+
+        if not start_date or not end_date:
+            return jsonify({"msg": "Invalid date format", "status": 0}), 400
 
         new_project = Project(
             client_id=client_id,
@@ -34,6 +52,7 @@ def create_project(decoded_payload):
             start_date=start_date,
             end_date=end_date,
             status=status,
+            project_logo=final_logo_url,
             remark=remark,
             created_by=created_by
         )
@@ -59,6 +78,7 @@ def get_all_projects():
                 "start_date": project.start_date.isoformat(),
                 "end_date": project.end_date.isoformat(),
                 "status": project.status,
+                "project_logo": project.project_logo,
                 "remark": project.remark,
                 "created_by": project.created_by,
                 "creator_email": project.creator.email if project.creator else None,
@@ -83,6 +103,7 @@ def get_project_by_id(project_id):
             "start_date": project.start_date.isoformat(),
             "end_date": project.end_date.isoformat(),
             "status": project.status,
+            "project_logo": project.project_logo,
             "remark": project.remark,
             "created_by": project.created_by,
             "creator_email": project.creator.email if project.creator else None,
@@ -107,11 +128,15 @@ def update_project(project_id):
         if "description" in data:
             project.description = data["description"]
         if "start_date" in data:
-            project.start_date = datetime.datetime.strptime(data["start_date"], '%Y-%m-%d').date()
+            project.start_date = parse_date(data["start_date"])
         if "end_date" in data:
-            project.end_date = datetime.datetime.strptime(data["end_date"], '%Y-%m-%d').date()
+            project.end_date = parse_date(data["end_date"])
         if "status" in data:
             project.status = data["status"]
+        if "project_logo" in data:
+            project_logo = data.get("project_logo")
+            saved_logo_url = save_image(project_logo, folder="project_logos")
+            project.project_logo = saved_logo_url if saved_logo_url else project_logo
         if "remark" in data:
             project.remark = data["remark"]
             

@@ -11,26 +11,26 @@ from src.utils.jwt import token_required
 client_bp = Blueprint("client", __name__, url_prefix="/api/v1/clients")
 
 @client_bp.route("/", methods=["POST"])
-@token_required
-def create_client_route(decoded_payload):
+# @token_required
+def create_client_route():
     return create_client()
 
 @client_bp.route("/", methods=["GET"])
-@token_required
-def get_clients_route(decoded_payload):
+# @token_required
+def get_clients_route():
     return get_all_clients()
 
 @client_bp.route("/<int:client_id>", methods=["GET"])
-@token_required
-def get_client_by_id_route(decoded_payload, client_id):
+# @token_required
+def get_client_by_id_route(client_id):
     return get_client_by_id(client_id)
 
 @client_bp.route("/<int:client_id>", methods=["PUT"])
-@token_required
-def update_client_route(decoded_payload, client_id):
+# @token_required
+def update_client_route(client_id):
     return update_client(client_id)
 
 @client_bp.route("/<int:client_id>", methods=["DELETE"])
-@token_required
-def delete_client_route(decoded_payload, client_id):
+# @token_required
+def delete_client_route(client_id):
     return delete_client(client_id)

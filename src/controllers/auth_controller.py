@@ -1,25 +1,30 @@
+import os
+import uuid
 import datetime
 import bcrypt
+import base64
 from src import db
-from flask import jsonify, request
+from flask import jsonify, request, current_app
 from src.models.user_model import User
 from src.models.admin_model import Admin
 from src.models.worker_model import Worker
 from src.utils.jwt import decode_jwt_token, generate_jwt_token
+from src.utils.image_utils import save_image
 
 def register_controller():
     try:
         data = request.get_json()
 
         email = data.get("email")
-        password = "Dce@2026"
+        password = data.get("password")
         role = data.get("role")
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
+        avatar_url = data.get("avatar_url")
 
-        if not all([email, role, first_name, last_name]):
-            return jsonify({"msg": "Missing required fields", "status": 0}), 400
+        if not all([email, password, role]):
+            return jsonify({"msg": "Email, Password and Role are mandatory", "status": 0}), 400
 
         valid_roles = ["superadmin", "admin", "scrum", "team_leader", "worker"]
         if role not in valid_roles:
@@ -27,6 +32,9 @@ def register_controller():
 
         if User.query.filter_by(email=email).first():
             return jsonify({"msg": "User with this email already exists", "status": 0}), 409
+
+        # Save image if provided
+        final_avatar_url = save_image(avatar_url) or avatar_url
 
         hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
@@ -37,6 +45,8 @@ def register_controller():
                 first_name=first_name,
                 last_name=last_name,
                 phone=phone,
+                email=email,
+                avatar_url=final_avatar_url,
                 is_superadmin=(role == "superadmin"),
                 is_admin=(role == "admin"),
                 is_scrum=(role == "scrum")
@@ -50,6 +60,7 @@ def register_controller():
                 first_name=first_name,
                 last_name=last_name,
                 phone=phone,
+                avatar_url=final_avatar_url,
                 is_tl=(role == "team_leader"),
                 is_worker=(role == "worker")
             )
@@ -98,6 +109,49 @@ def login_controller():
         user.refresh_token_created_at = datetime.datetime.utcnow()
         
         # Update last_login for Admin if applicable
+        if user.role in ["superadmin", "admin", "scrum"]:
+            admin = Admin.query.get(user.role_id)
+            if admin:
+                admin.last_login = datetime.datetime.utcnow()
+                
+        db.session.commit()
+
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "email": user.email,
+            "role": user.role,
+            "status": 1,
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+
+def google_login_controller():
+    try:
+        data = request.get_json()
+        email = data.get("email")
+
+        if not email:
+            return jsonify({"message": "Email is required", "status": 0}), 400
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            return jsonify({"message": "User with this Google account not found. Please register first.", "status": 0}), 404
+
+        if not user.is_active:
+            return jsonify({"message": "User account is inactive", "status": 0}), 403
+
+        access_token = generate_jwt_token(user.id)
+        refresh_token = generate_jwt_token(user.id, is_refresh=True)
+
+        user.refresh_token = refresh_token
+        user.refresh_token_created_at = datetime.datetime.utcnow()
+        
         if user.role in ["superadmin", "admin", "scrum"]:
             admin = Admin.query.get(user.role_id)
             if admin:

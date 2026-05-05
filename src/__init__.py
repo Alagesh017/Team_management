@@ -21,7 +21,7 @@ def create_app():
     app = Flask(__name__)
 
     # Handling CORS
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
     # Middlewares
     # Agent check
@@ -48,7 +48,7 @@ def create_app():
     # Import routes
     try:
 
-        @app.route("/src/assets/<path:filename>")
+        @app.route("/api/v1/src/assets/<path:filename>")
         def serve_static(filename):
             return send_from_directory(
                 current_app.config["SERVE_STATIC_FOLDER"], filename

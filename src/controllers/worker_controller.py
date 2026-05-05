@@ -3,6 +3,8 @@ import bcrypt
 from src import db
 from src.models.worker_model import Worker
 from src.models.user_model import User
+from src.utils.date_utils import parse_date
+from src.utils.image_utils import save_image
 
 def create_worker():
     try:
@@ -13,6 +15,11 @@ def create_worker():
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
+        avatar_url = data.get("avatar_url")
+
+        # Save image if provided as base64
+        saved_url = save_image(avatar_url)
+        final_avatar_url = saved_url if saved_url else avatar_url
         
         is_tl = data.get("is_tl", False)
         is_worker = data.get("is_worker", False)
@@ -20,7 +27,7 @@ def create_worker():
 
         job_title = data.get("job_title")
         department = data.get("department")
-        experience_years = data.get("experience_years")
+        experience_years = data.get("experience_years",0)
         working_hours = data.get("working_hours")
         work_mode = data.get("work_mode")
         office_location = data.get("office_location")
@@ -33,7 +40,7 @@ def create_worker():
         state = data.get("state")
         country = data.get("country")
         pincode = data.get("pincode")
-        joining_date = data.get("joining_date")
+        joining_date = parse_date(data.get("joining_date"))
         employment_type = data.get("employment_type")
         status = data.get("status", "ACTIVE")
 
@@ -58,6 +65,7 @@ def create_worker():
             last_name=last_name,
             phone=phone,
             email=email,
+            avatar_url=final_avatar_url,
             is_tl=is_tl,
             is_worker=is_worker,
             job_title=job_title,
@@ -196,7 +204,16 @@ def update_worker(worker_id):
         if "email" in data:
             worker.email = data["email"]
         if "avatar_url" in data:
-            worker.avatar_url = data["avatar_url"]
+            # Save image if provided as base64
+            saved_url = save_image(data["avatar_url"])
+            if saved_url:
+                worker.avatar_url = saved_url
+            else:
+                # If save_image failed or wasn't base64, only update if it's not a super long string
+                # or if it's a valid existing URL/path
+                new_url = data["avatar_url"]
+                if new_url and len(new_url) < 1000: # Safety check
+                    worker.avatar_url = new_url
         if "is_tl" in data:
             worker.is_tl = data["is_tl"]
         if "is_worker" in data:
@@ -232,7 +249,7 @@ def update_worker(worker_id):
         if "pincode" in data:
             worker.pincode = data["pincode"]
         if "joining_date" in data:
-            worker.joining_date = data["joining_date"]
+            worker.joining_date = parse_date(data["joining_date"])
         if "employment_type" in data:
             worker.employment_type = data["employment_type"]
         if "status" in data:

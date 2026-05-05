@@ -9,7 +9,7 @@ class Worker(db.Model):
     last_name = db.Column(db.String(100), nullable=False)
     phone = db.Column(db.String(20), nullable=True)
     email = db.Column(db.String(150), nullable=True)
-    avatar_url = db.Column(db.String(500), nullable=True)
+    avatar_url = db.Column(db.Text(length=16777215), nullable=True) # MEDIUMTEXT for MySQL
     is_tl = db.Column(db.Boolean, default=False)
     is_worker = db.Column(db.Boolean, default=True)
     job_title = db.Column(db.String(255), nullable=True)

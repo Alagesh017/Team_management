@@ -2,6 +2,7 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.task_model import Task
+from src.utils.date_utils import parse_date
 
 def create_task(decoded_payload):
     try:
@@ -26,11 +27,8 @@ def create_task(decoded_payload):
         if not all([project_id, status_id, title, user_id]):
             return jsonify({"msg": "Project ID, Status ID, Title, and Assigned User ID are required", "status": 0}), 400
 
-        try:
-            start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
-            due_date = datetime.datetime.strptime(due_date_str, '%Y-%m-%d').date() if due_date_str else None
-        except ValueError:
-            return jsonify({"msg": "Invalid date format. Use YYYY-MM-DD", "status": 0}), 400
+        start_date = parse_date(start_date_str)
+        due_date = parse_date(due_date_str)
 
         new_task = Task(
             project_id=project_id,
@@ -142,9 +140,9 @@ def update_task(task_id):
         if "priority" in data:
             task.priority = data["priority"]
         if "start_date" in data:
-            task.start_date = datetime.datetime.strptime(data["start_date"], '%Y-%m-%d').date() if data["start_date"] else None
+            task.start_date = parse_date(data["start_date"])
         if "due_date" in data:
-            task.due_date = datetime.datetime.strptime(data["due_date"], '%Y-%m-%d').date() if data["due_date"] else None
+            task.due_date = parse_date(data["due_date"])
         if "user_id" in data:
             task.user_id = data["user_id"]
         if "estimated_hours" in data:

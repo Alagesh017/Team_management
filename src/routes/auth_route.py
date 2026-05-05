@@ -3,6 +3,7 @@ from src.controllers.auth_controller import (
     login_controller,
     register_controller,
     token_refresh_controller,
+    google_login_controller,
 )
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
@@ -18,6 +19,12 @@ def register():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     return login_controller()
+
+
+# Google Login route
+@auth_bp.route("/google-login", methods=["POST"])
+def google_login():
+    return google_login_controller()
 
 
 # Token Refresh route
