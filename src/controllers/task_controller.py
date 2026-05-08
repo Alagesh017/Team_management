@@ -4,7 +4,7 @@ from src import db
 from src.models.task_model import Task
 from src.utils.date_utils import parse_date
 
-def create_task(decoded_payload):
+def create_task(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -17,18 +17,18 @@ def create_task(decoded_payload):
         priority = data.get("priority", "medium")
         start_date_str = data.get("start_date")
         due_date_str = data.get("due_date")
-        user_id = data.get("user_id") # assigned to
+        worker_id = data.get("worker_id")
+        responsibility_person_id = data.get("responsibility_person_id")
         estimated_hours = data.get("estimated_hours")
         actual_hours = data.get("actual_hours")
         remark = data.get("remark")
+        assigned_by = data.get("assigned_by")
         
-        assigned_by = decoded_payload.get("user_id")
+        if not all([project_id, status_id, title, worker_id, assigned_by]):
+            return jsonify({"msg": "Project, Status, Title, Worker, and Assigner are required", "status": 0}), 400
 
-        if not all([project_id, status_id, title, user_id]):
-            return jsonify({"msg": "Project ID, Status ID, Title, and Assigned User ID are required", "status": 0}), 400
-
-        start_date = parse_date(start_date_str)
-        due_date = parse_date(due_date_str)
+        start_date = parse_date(start_date_str) if start_date_str else None
+        due_date = parse_date(due_date_str) if due_date_str else None
 
         new_task = Task(
             project_id=project_id,
@@ -40,8 +40,9 @@ def create_task(decoded_payload):
             priority=priority,
             start_date=start_date,
             due_date=due_date,
-            user_id=user_id,
+            worker_id=worker_id,
             assigned_by=assigned_by,
+            responsibility_person_id=responsibility_person_id,
             estimated_hours=estimated_hours,
             actual_hours=actual_hours,
             remark=remark
@@ -52,6 +53,42 @@ def create_task(decoded_payload):
         return jsonify({"msg": "Task created successfully", "status": 1, "task_id": new_task.id}), 201
     except Exception as e:
         db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+def get_tasks_by_project(project_id):
+    try:
+        tasks = Task.query.filter_by(project_id=project_id).all()
+        result = []
+        for task in tasks:
+            task_data = {
+                "id": task.id,
+                "project_id": task.project_id,
+                "project_name": task.project.name if task.project else None,
+                "allocation_id": task.allocation_id,
+                "status_id": task.status_id,
+                "status_name": task.status.name if task.status else None,
+                "title": task.title,
+                "description": task.description,
+                "goal": task.goal,
+                "priority": task.priority,
+                "start_date": task.start_date.isoformat() if task.start_date else None,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "worker_id": task.worker_id,
+                "assigned_to_email": task.assigned_worker.email if task.assigned_worker else None,
+                "assigned_to_name": f"{task.assigned_worker.first_name} {task.assigned_worker.last_name}" if task.assigned_worker else None,
+                "assigned_by": task.assigned_by,
+                "assigned_by_email": task.assigner.email if task.assigner else None,
+                "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
+                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "remark": task.remark,
+                "created_at": task.created_at
+            }
+            result.append(task_data)
+        return jsonify({"tasks": result, "status": 1}), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_tasks_by_project: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def get_all_tasks():

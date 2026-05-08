@@ -2,6 +2,7 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.project_model import Project
+from src.models.project_allocation_model import ProjectAllocation
 from src.models.user_model import User
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image
@@ -16,6 +17,9 @@ def create_project(decoded_payload=None):
         start_date_str = data.get("start_date")
         end_date_str = data.get("end_date")
         status = data.get("status", "active")
+        group_id = data.get("group_id")
+        created_by = data.get("created_by")
+
         remark = data.get("remark")
         project_logo = data.get("project_logo")
         
@@ -23,21 +27,8 @@ def create_project(decoded_payload=None):
         saved_logo_url = save_image(project_logo, folder="project_logos")
         final_logo_url = saved_logo_url if saved_logo_url else project_logo
         
-        # User ID from the decoded JWT token or default for testing
-        created_by = None
-        if decoded_payload:
-            created_by = decoded_payload.get("user_id")
-        else:
-            # Fallback for testing: get the first user from the database
-            first_user = User.query.first()
-            if first_user:
-                created_by = first_user.id
-            else:
-                # If no user exists at all, we can't create a project due to FK constraint
-                return jsonify({"msg": "No users found in database. Please create a user first.", "status": 0}), 400
-
-        if not all([name, start_date_str, end_date_str]):
-            return jsonify({"msg": "Project name, start date, and end date are required", "status": 0}), 400
+        if not all([name, start_date_str, end_date_str, created_by]):
+            return jsonify({"msg": "Project name, start date, end date, and creator are required", "status": 0}), 400
 
         start_date = parse_date(start_date_str)
         end_date = parse_date(end_date_str)
@@ -48,6 +39,7 @@ def create_project(decoded_payload=None):
         new_project = Project(
             client_id=client_id,
             name=name,
+            group_id=group_id,
             description=description,
             start_date=start_date,
             end_date=end_date,
@@ -59,7 +51,19 @@ def create_project(decoded_payload=None):
         db.session.add(new_project)
         db.session.commit()
         
-        return jsonify({"msg": "Project created successfully", "status": 1, "project_id": new_project.id}), 201
+        # Automatically create a project allocation entry
+        new_allocation = ProjectAllocation(
+            project_id=new_project.id,
+            members=[], # Default empty members as requested
+            start_date=start_date,
+            end_date=end_date,
+            remark=remark,
+            allocated_by=created_by
+        )
+        db.session.add(new_allocation)
+        db.session.commit()
+        
+        return jsonify({"msg": "Project created successfully and allocation initialized", "status": 1, "project_id": new_project.id}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
@@ -74,6 +78,8 @@ def get_all_projects():
                 "client_id": project.client_id,
                 "client_name": project.client.name if project.client else None,
                 "name": project.name,
+                "group_id": project.group_id,
+                "group_name": project.group.name if project.group else None,
                 "description": project.description,
                 "start_date": project.start_date.isoformat(),
                 "end_date": project.end_date.isoformat(),
@@ -98,6 +104,8 @@ def get_project_by_id(project_id):
             "id": project.id,
             "client_id": project.client_id,
             "client_name": project.client.name if project.client else None,
+            "group_id": project.group_id,
+            "group_name": project.group.name if project.group else None,
             "name": project.name,
             "description": project.description,
             "start_date": project.start_date.isoformat(),
@@ -123,6 +131,8 @@ def update_project(project_id):
         
         if "client_id" in data:
             project.client_id = data["client_id"]
+        if "group_id" in data:
+            project.group_id = data["group_id"]
         if "name" in data:
             project.name = data["name"]
         if "description" in data:

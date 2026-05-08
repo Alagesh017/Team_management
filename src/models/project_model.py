@@ -6,6 +6,8 @@ class Project(db.Model):
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('project_groups.id'), nullable=True)
+
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)
     start_date = db.Column(db.Date, nullable=False)
