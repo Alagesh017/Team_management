@@ -2,12 +2,14 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.leave_request_model import LeaveRequest
+from src.utils.role_utils import get_person_details
 
 def create_leave_request(decoded_payload):
     try:
         data = request.get_json()
         
-        user_id = decoded_payload.get("user_id")
+        role_id = decoded_payload.get("role_id")
+        role = decoded_payload.get("role")
         leave_type = data.get("type") # leave | permission
         reason = data.get("reason")
         start_date_str = data.get("start_date")
@@ -28,7 +30,8 @@ def create_leave_request(decoded_payload):
             return jsonify({"msg": "Invalid date or time format. Use YYYY-MM-DD for date and HH:MM for time", "status": 0}), 400
 
         new_leave = LeaveRequest(
-            user_id=user_id,
+            role_id=role_id,
+            role=role,
             type=leave_type,
             reason=reason,
             start_date=start_date,
@@ -50,10 +53,13 @@ def get_all_leave_requests():
         leaves = LeaveRequest.query.all()
         result = []
         for leave in leaves:
+            person = get_person_details(leave.role, leave.role_id)
+            reviewed_by_person = get_person_details(leave.reviewed_by_role, leave.reviewed_by_role_id) if leave.reviewed_by_role_id and leave.reviewed_by_role else None
             result.append({
                 "id": leave.id,
-                "user_id": leave.user_id,
-                "user_email": leave.user.email if leave.user else None,
+                "role_id": leave.role_id,
+                "role": leave.role,
+                "person": person,
                 "type": leave.type,
                 "reason": leave.reason,
                 "start_date": leave.start_date.isoformat() if leave.start_date else None,
@@ -61,8 +67,9 @@ def get_all_leave_requests():
                 "start_time": leave.start_time.strftime('%H:%M') if leave.start_time else None,
                 "end_time": leave.end_time.strftime('%H:%M') if leave.end_time else None,
                 "status": leave.status,
-                "reviewed_by": leave.reviewed_by,
-                "reviewer_email": leave.reviewer.email if leave.reviewer else None,
+                "reviewed_by_role_id": leave.reviewed_by_role_id,
+                "reviewed_by_role": leave.reviewed_by_role,
+                "reviewed_by_person": reviewed_by_person,
                 "reviewed_at": leave.reviewed_at.isoformat() if leave.reviewed_at else None,
                 "review_comment": leave.review_comment,
                 "remark": leave.remark,
@@ -74,10 +81,12 @@ def get_all_leave_requests():
 
 def get_my_leave_requests(decoded_payload):
     try:
-        user_id = decoded_payload.get("user_id")
-        leaves = LeaveRequest.query.filter_by(user_id=user_id).all()
+        role_id = decoded_payload.get("role_id")
+        role = decoded_payload.get("role")
+        leaves = LeaveRequest.query.filter_by(role_id=role_id, role=role).all()
         result = []
         for leave in leaves:
+            reviewed_by_person = get_person_details(leave.reviewed_by_role, leave.reviewed_by_role_id) if leave.reviewed_by_role_id and leave.reviewed_by_role else None
             result.append({
                 "id": leave.id,
                 "type": leave.type,
@@ -85,6 +94,7 @@ def get_my_leave_requests(decoded_payload):
                 "start_date": leave.start_date.isoformat() if leave.start_date else None,
                 "end_date": leave.end_date.isoformat() if leave.end_date else None,
                 "status": leave.status,
+                "reviewed_by_person": reviewed_by_person,
                 "review_comment": leave.review_comment,
                 "created_at": leave.created_at.isoformat() if leave.created_at else None
             })
@@ -107,7 +117,8 @@ def review_leave_request(leave_id, decoded_payload):
             
         leave.status = status
         leave.review_comment = review_comment
-        leave.reviewed_by = decoded_payload.get("user_id")
+        leave.reviewed_by_role_id = decoded_payload.get("role_id")
+        leave.reviewed_by_role = decoded_payload.get("role")
         leave.reviewed_at = datetime.datetime.utcnow()
         
         db.session.commit()
@@ -121,10 +132,6 @@ def delete_leave_request(leave_id, decoded_payload):
         leave = LeaveRequest.query.get(leave_id)
         if not leave:
             return jsonify({"message": "Leave request not found", "status": 0}), 404
-        
-        # Only the requester can delete their pending request
-        if leave.user_id != decoded_payload.get("user_id"):
-             return jsonify({"message": "Unauthorized to delete this request", "status": 0}), 403
         
         if leave.status != 'pending':
             return jsonify({"message": "Cannot delete a request that is already reviewed", "status": 0}), 400

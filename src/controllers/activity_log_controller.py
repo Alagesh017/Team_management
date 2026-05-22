@@ -3,8 +3,9 @@ import datetime
 import json
 from src import db
 from src.models.activity_log_model import ActivityLog
+from src.utils.role_utils import get_person_details
 
-def create_activity_log(user_id, table_name, record_id, action, old_data=None, new_data=None, remark=None):
+def create_activity_log(role_id, role, table_name, record_id, action, old_data=None, new_data=None, remark=None):
     """
     Helper function to create activity logs from other controllers.
     """
@@ -17,7 +18,8 @@ def create_activity_log(user_id, table_name, record_id, action, old_data=None, n
         new_data_str = json.dumps(new_data) if isinstance(new_data, dict) else new_data
 
         log = ActivityLog(
-            user_id=user_id,
+            role_id=role_id,
+            role=role,
             table_name=table_name,
             record_id=record_id,
             action=action,
@@ -40,10 +42,12 @@ def get_all_activity_logs():
         logs = ActivityLog.query.order_by(ActivityLog.created_at.desc()).all()
         result = []
         for log in logs:
+            person = get_person_details(log.role, log.role_id)
             result.append({
                 "id": log.id,
-                "user_id": log.user_id,
-                "user_email": log.user.email if log.user else None,
+                "role_id": log.role_id,
+                "role": log.role,
+                "person": person,
                 "table_name": log.table_name,
                 "record_id": log.record_id,
                 "action": log.action,
@@ -58,16 +62,18 @@ def get_all_activity_logs():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_logs_by_user(user_id):
+def get_logs_by_role(role_id, role):
     try:
-        logs = ActivityLog.query.filter_by(user_id=user_id).order_by(ActivityLog.created_at.desc()).all()
+        logs = ActivityLog.query.filter_by(role_id=role_id, role=role).order_by(ActivityLog.created_at.desc()).all()
         result = []
         for log in logs:
+            person = get_person_details(log.role, log.role_id)
             result.append({
                 "id": log.id,
                 "table_name": log.table_name,
                 "record_id": log.record_id,
                 "action": log.action,
+                "person": person,
                 "remark": log.remark,
                 "created_at": log.created_at.isoformat() if log.created_at else None
             })
@@ -75,15 +81,21 @@ def get_logs_by_user(user_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+# Backward compatibility
+def get_logs_by_user(user_id):
+    return get_logs_by_role(None, None)
+
 def get_logs_by_table(table_name):
     try:
         logs = ActivityLog.query.filter_by(table_name=table_name).order_by(ActivityLog.created_at.desc()).all()
         result = []
         for log in logs:
+            person = get_person_details(log.role, log.role_id)
             result.append({
                 "id": log.id,
-                "user_id": log.user_id,
-                "user_email": log.user.email if log.user else None,
+                "role_id": log.role_id,
+                "role": log.role,
+                "person": person,
                 "record_id": log.record_id,
                 "action": log.action,
                 "created_at": log.created_at.isoformat() if log.created_at else None

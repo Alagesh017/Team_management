@@ -6,7 +6,8 @@ class MeetingMessage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('meetings.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # sender
+    role_id = db.Column(db.Integer, nullable=False)
+    role = db.Column(db.String(50), nullable=False)
     message = db.Column(db.Text, nullable=True) # null if only attachment sent
     attachment_url = db.Column(db.String(500), nullable=True)
     attachment_name = db.Column(db.String(255), nullable=True)
@@ -18,7 +19,6 @@ class MeetingMessage(db.Model):
     
     # Relationships
     meeting = db.relationship('Meeting', backref='messages')
-    user = db.relationship('User', backref='meeting_messages')
     
     def __repr__(self):
-        return f"<MeetingMessage {self.id} by User {self.user_id}>"
+        return f"<MeetingMessage {self.id} by {self.role} {self.role_id}>"

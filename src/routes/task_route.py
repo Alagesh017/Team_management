@@ -12,6 +12,7 @@ from src.utils.jwt import token_required
 task_bp = Blueprint("task", __name__, url_prefix="/api/v1/tasks")
 
 @task_bp.route("/", methods=["POST"])
+# @token_required
 def create_task_route():
     return create_task()
 

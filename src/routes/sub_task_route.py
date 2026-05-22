@@ -2,6 +2,7 @@ from flask import Blueprint
 from src.controllers.sub_task_controller import (
     create_sub_task,
     get_all_sub_tasks,
+    get_sub_tasks_by_task_id,
     get_sub_task_by_id,
     update_sub_task,
     delete_sub_task,
@@ -19,6 +20,11 @@ def create_sub_task_route(decoded_payload):
 @token_required
 def get_sub_tasks_route(decoded_payload):
     return get_all_sub_tasks()
+
+@sub_task_bp.route("/task/<int:task_id>", methods=["GET"])
+@token_required
+def get_sub_tasks_by_task_id_route(decoded_payload, task_id):
+    return get_sub_tasks_by_task_id(task_id)
 
 @sub_task_bp.route("/<int:sub_task_id>", methods=["GET"])
 @token_required

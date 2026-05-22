@@ -27,7 +27,9 @@ def create_worker():
 
         job_title = data.get("job_title")
         department = data.get("department")
-        experience_years = data.get("experience_years",0)
+        experience_years = data.get("experience_years")
+        if experience_years == "":
+            experience_years = None
         working_hours = data.get("working_hours")
         work_mode = data.get("work_mode")
         office_location = data.get("office_location")
@@ -223,7 +225,11 @@ def update_worker(worker_id):
         if "department" in data:
             worker.department = data["department"]
         if "experience_years" in data:
-            worker.experience_years = data["experience_years"]
+            exp_val = data["experience_years"]
+            if exp_val == "":
+                worker.experience_years = None
+            else:
+                worker.experience_years = exp_val
         if "working_hours" in data:
             worker.working_hours = data["working_hours"]
         if "work_mode" in data:

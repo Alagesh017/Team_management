@@ -12,8 +12,10 @@ class SubTask(db.Model):
     priority = db.Column(db.String(20), default='medium') # low | medium | high | critical
     start_date = db.Column(db.Date, nullable=True)
     due_date = db.Column(db.Date, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # assigned to
-    assigned_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) # who assigned
+    role_id = db.Column(db.Integer, nullable=True) # admin.id or worker.id
+    role = db.Column(db.String(50), nullable=True) # admin or worker
+    assigned_by_role_id = db.Column(db.Integer, nullable=False) # who assigned (role_id)
+    assigned_by_role = db.Column(db.String(50), nullable=False) # who assigned (role)
     estimated_hours = db.Column(db.Numeric(6, 2), nullable=True)
     actual_hours = db.Column(db.Numeric(6, 2), nullable=True)
     remark = db.Column(db.Text, nullable=True)
@@ -23,8 +25,6 @@ class SubTask(db.Model):
     # Relationships
     parent_task = db.relationship('Task', backref='sub_tasks')
     status = db.relationship('TaskStatus', backref='sub_tasks')
-    assigned_user = db.relationship('User', foreign_keys=[user_id], backref='assigned_sub_tasks')
-    assigner = db.relationship('User', foreign_keys=[assigned_by], backref='assigned_by_sub_tasks')
     
     def __repr__(self):
         return f"<SubTask {self.title}>"

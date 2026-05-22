@@ -2,6 +2,7 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.task_attachment_model import TaskAttachment
+from src.utils.role_utils import get_person_details
 
 def create_attachment(decoded_payload):
     try:
@@ -13,14 +14,16 @@ def create_attachment(decoded_payload):
         file_size = data.get("file_size")
         remark = data.get("remark")
         
-        user_id = decoded_payload.get("user_id")
+        role_id = decoded_payload.get("role_id")
+        role = decoded_payload.get("role")
 
         if not all([task_id, file_name, file_url]):
             return jsonify({"msg": "Task ID, File Name, and File URL are required", "status": 0}), 400
 
         new_attachment = TaskAttachment(
             task_id=task_id,
-            user_id=user_id,
+            role_id=role_id,
+            role=role,
             file_name=file_name,
             file_url=file_url,
             file_size=file_size,
@@ -39,12 +42,14 @@ def get_all_attachments():
         attachments = TaskAttachment.query.all()
         result = []
         for attachment in attachments:
+            person = get_person_details(attachment.role, attachment.role_id)
             result.append({
                 "id": attachment.id,
                 "task_id": attachment.task_id,
                 "task_title": attachment.task.title if attachment.task else None,
-                "user_id": attachment.user_id,
-                "user_email": attachment.user.email if attachment.user else None,
+                "role_id": attachment.role_id,
+                "role": attachment.role,
+                "person": person,
                 "file_name": attachment.file_name,
                 "file_url": attachment.file_url,
                 "file_size": attachment.file_size,
@@ -62,12 +67,14 @@ def get_attachment_by_id(attachment_id):
         if not attachment:
             return jsonify({"message": "Attachment not found", "status": 0}), 404
         
+        person = get_person_details(attachment.role, attachment.role_id)
         result = {
             "id": attachment.id,
             "task_id": attachment.task_id,
             "task_title": attachment.task.title if attachment.task else None,
-            "user_id": attachment.user_id,
-            "user_email": attachment.user.email if attachment.user else None,
+            "role_id": attachment.role_id,
+            "role": attachment.role,
+            "person": person,
             "file_name": attachment.file_name,
             "file_url": attachment.file_url,
             "file_size": attachment.file_size,

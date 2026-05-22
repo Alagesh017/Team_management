@@ -2,6 +2,7 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.task_comment_model import TaskComment
+from src.utils.role_utils import get_person_details
 
 def create_comment(decoded_payload):
     try:
@@ -11,14 +12,16 @@ def create_comment(decoded_payload):
         comment = data.get("comment")
         remark = data.get("remark")
         
-        user_id = decoded_payload.get("user_id")
+        role_id = decoded_payload.get("role_id")
+        role = decoded_payload.get("role")
 
         if not task_id or not comment:
             return jsonify({"msg": "Task ID and comment are required", "status": 0}), 400
 
         new_comment = TaskComment(
             task_id=task_id,
-            user_id=user_id,
+            role_id=role_id,
+            role=role,
             comment=comment,
             remark=remark
         )
@@ -35,11 +38,13 @@ def get_comments_by_task(task_id):
         comments = TaskComment.query.filter_by(task_id=task_id).order_by(TaskComment.created_at.desc()).all()
         result = []
         for c in comments:
+            person = get_person_details(c.role, c.role_id)
             result.append({
                 "id": c.id,
                 "task_id": c.task_id,
-                "user_id": c.user_id,
-                "user_email": c.user.email if c.user else None,
+                "role_id": c.role_id,
+                "role": c.role,
+                "person": person,
                 "comment": c.comment,
                 "remark": c.remark,
                 "created_at": c.created_at
@@ -54,11 +59,13 @@ def get_comment_by_id(comment_id):
         if not c:
             return jsonify({"message": "Comment not found", "status": 0}), 404
         
+        person = get_person_details(c.role, c.role_id)
         result = {
             "id": c.id,
             "task_id": c.task_id,
-            "user_id": c.user_id,
-            "user_email": c.user.email if c.user else None,
+            "role_id": c.role_id,
+            "role": c.role,
+            "person": person,
             "comment": c.comment,
             "remark": c.remark,
             "created_at": c.created_at
@@ -72,10 +79,6 @@ def update_comment(comment_id, decoded_payload):
         c = TaskComment.query.get(comment_id)
         if not c:
             return jsonify({"message": "Comment not found", "status": 0}), 404
-
-        # Only allow the author to update their comment
-        if c.user_id != decoded_payload.get("user_id"):
-            return jsonify({"message": "Unauthorized to update this comment", "status": 0}), 403
 
         data = request.get_json()
         
@@ -95,10 +98,6 @@ def delete_comment(comment_id, decoded_payload):
         c = TaskComment.query.get(comment_id)
         if not c:
             return jsonify({"message": "Comment not found", "status": 0}), 404
-            
-        # Only allow the author to delete their comment
-        if c.user_id != decoded_payload.get("user_id"):
-            return jsonify({"message": "Unauthorized to delete this comment", "status": 0}), 403
 
         db.session.delete(c)
         db.session.commit()

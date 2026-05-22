@@ -102,8 +102,8 @@ def login_controller():
         if not user.is_active:
             return jsonify({"message": "User account is inactive", "status": 0}), 403
 
-        access_token = generate_jwt_token(user.id)
-        refresh_token = generate_jwt_token(user.id, is_refresh=True)
+        access_token = generate_jwt_token(user.id, user.role_id, user.role)
+        refresh_token = generate_jwt_token(user.id, user.role_id, user.role, is_refresh=True)
 
         user.refresh_token = refresh_token
         user.refresh_token_created_at = datetime.datetime.utcnow()
@@ -122,6 +122,8 @@ def login_controller():
             "refresh_token": refresh_token,
             "email": user.email,
             "role": user.role,
+            "user_id": user.id,
+            "role_id": user.role_id,
             "status": 1,
         }), 200
 
@@ -146,8 +148,8 @@ def google_login_controller():
         if not user.is_active:
             return jsonify({"message": "User account is inactive", "status": 0}), 403
 
-        access_token = generate_jwt_token(user.id)
-        refresh_token = generate_jwt_token(user.id, is_refresh=True)
+        access_token = generate_jwt_token(user.id, user.role_id, user.role)
+        refresh_token = generate_jwt_token(user.id, user.role_id, user.role, is_refresh=True)
 
         user.refresh_token = refresh_token
         user.refresh_token_created_at = datetime.datetime.utcnow()
@@ -165,6 +167,8 @@ def google_login_controller():
             "refresh_token": refresh_token,
             "email": user.email,
             "role": user.role,
+            "user_id": user.id,
+            "role_id": user.role_id,
             "status": 1,
         }), 200
 

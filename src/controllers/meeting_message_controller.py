@@ -2,6 +2,7 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.meeting_message_model import MeetingMessage
+from src.utils.role_utils import get_person_details
 
 def create_message(decoded_payload):
     try:
@@ -13,7 +14,8 @@ def create_message(decoded_payload):
         attachment_name = data.get("attachment_name")
         remark = data.get("remark")
         
-        user_id = decoded_payload.get("user_id")
+        role_id = decoded_payload.get("role_id")
+        role = decoded_payload.get("role")
 
         if not meeting_id:
             return jsonify({"msg": "Meeting ID is required", "status": 0}), 400
@@ -23,7 +25,8 @@ def create_message(decoded_payload):
 
         new_message = MeetingMessage(
             meeting_id=meeting_id,
-            user_id=user_id,
+            role_id=role_id,
+            role=role,
             message=message,
             attachment_url=attachment_url,
             attachment_name=attachment_name,
@@ -42,11 +45,13 @@ def get_messages_by_meeting(meeting_id):
         messages = MeetingMessage.query.filter_by(meeting_id=meeting_id).all()
         result = []
         for msg in messages:
+            person = get_person_details(msg.role, msg.role_id)
             result.append({
                 "id": msg.id,
                 "meeting_id": msg.meeting_id,
-                "user_id": msg.user_id,
-                "user_email": msg.user.email if msg.user else None,
+                "role_id": msg.role_id,
+                "role": msg.role,
+                "person": person,
                 "message": msg.message,
                 "attachment_url": msg.attachment_url,
                 "attachment_name": msg.attachment_name,
@@ -65,11 +70,13 @@ def get_message_by_id(message_id):
         if not msg:
             return jsonify({"message": "Message not found", "status": 0}), 404
         
+        person = get_person_details(msg.role, msg.role_id)
         result = {
             "id": msg.id,
             "meeting_id": msg.meeting_id,
-            "user_id": msg.user_id,
-            "user_email": msg.user.email if msg.user else None,
+            "role_id": msg.role_id,
+            "role": msg.role,
+            "person": person,
             "message": msg.message,
             "attachment_url": msg.attachment_url,
             "attachment_name": msg.attachment_name,
@@ -87,9 +94,6 @@ def update_message(message_id, decoded_payload):
         msg = MeetingMessage.query.get(message_id)
         if not msg:
             return jsonify({"message": "Message not found", "status": 0}), 404
-        
-        if msg.user_id != decoded_payload.get("user_id"):
-            return jsonify({"message": "Unauthorized to edit this message", "status": 0}), 403
             
         data = request.get_json()
         
@@ -111,10 +115,7 @@ def delete_message(message_id, decoded_payload):
         msg = MeetingMessage.query.get(message_id)
         if not msg:
             return jsonify({"message": "Message not found", "status": 0}), 404
-            
-        if msg.user_id != decoded_payload.get("user_id"):
-            return jsonify({"message": "Unauthorized to delete this message", "status": 0}), 403
-        
+
         db.session.delete(msg)
         db.session.commit()
         return jsonify({"msg": "Message deleted successfully", "status": 1}), 200

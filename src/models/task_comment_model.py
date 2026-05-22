@@ -6,7 +6,8 @@ class TaskComment(db.Model):
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    role_id = db.Column(db.Integer, nullable=False)
+    role = db.Column(db.String(50), nullable=False)
     comment = db.Column(db.Text, nullable=False)
     remark = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
@@ -14,7 +15,6 @@ class TaskComment(db.Model):
     
     # Relationships
     task = db.relationship('Task', backref='comments')
-    user = db.relationship('User', backref='task_comments')
     
     def __repr__(self):
-        return f"<TaskComment task_id={self.task_id} user_id={self.user_id}>"
+        return f"<TaskComment task_id={self.task_id} role={self.role} role_id={self.role_id}>"

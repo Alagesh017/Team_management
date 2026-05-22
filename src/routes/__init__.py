@@ -14,6 +14,8 @@ from src.routes.meeting_message_route import meeting_message_bp
 from src.routes.leave_request_route import leave_request_bp
 from src.routes.activity_log_route import activity_log_bp
 from src.routes.project_group_route import project_group_bp
+from src.routes.project_member_route import project_member_bp
+from src.routes.project_task_route import project_task_bp
 
 
 def init_routes(app):
@@ -33,5 +35,7 @@ def init_routes(app):
     app.register_blueprint(leave_request_bp)
     app.register_blueprint(activity_log_bp)
     app.register_blueprint(project_group_bp)
+    app.register_blueprint(project_member_bp)
+    app.register_blueprint(project_task_bp)
 
 

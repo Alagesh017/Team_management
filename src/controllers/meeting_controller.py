@@ -2,6 +2,7 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.meeting_model import Meeting
+from src.utils.role_utils import get_person_details
 
 def create_meeting(decoded_payload):
     try:
@@ -19,7 +20,8 @@ def create_meeting(decoded_payload):
         status = data.get("status", "scheduled")
         remark = data.get("remark")
         
-        created_by = decoded_payload.get("user_id")
+        created_by_role_id = decoded_payload.get("role_id")
+        created_by_role = decoded_payload.get("role")
 
         if not all([project_id, title, members, meeting_date_str, start_time_str]):
             return jsonify({"msg": "Project ID, Title, Members, Date, and Start Time are required", "status": 0}), 400
@@ -43,7 +45,8 @@ def create_meeting(decoded_payload):
             end_time=end_time,
             status=status,
             remark=remark,
-            created_by=created_by
+            created_by_role_id=created_by_role_id,
+            created_by_role=created_by_role
         )
         db.session.add(new_meeting)
         db.session.commit()
@@ -58,6 +61,7 @@ def get_all_meetings():
         meetings = Meeting.query.all()
         result = []
         for meeting in meetings:
+            created_by_person = get_person_details(meeting.created_by_role, meeting.created_by_role_id)
             result.append({
                 "id": meeting.id,
                 "project_id": meeting.project_id,
@@ -73,8 +77,9 @@ def get_all_meetings():
                 "end_time": meeting.end_time.strftime('%H:%M') if meeting.end_time else None,
                 "status": meeting.status,
                 "remark": meeting.remark,
-                "created_by": meeting.created_by,
-                "creator_email": meeting.creator.email if meeting.creator else None,
+                "created_by_role_id": meeting.created_by_role_id,
+                "created_by_role": meeting.created_by_role,
+                "created_by_person": created_by_person,
                 "created_at": meeting.created_at.isoformat() if meeting.created_at else None
             })
         return jsonify({"meetings": result, "status": 1}), 200
@@ -87,6 +92,7 @@ def get_meeting_by_id(meeting_id):
         if not meeting:
             return jsonify({"message": "Meeting not found", "status": 0}), 404
         
+        created_by_person = get_person_details(meeting.created_by_role, meeting.created_by_role_id)
         result = {
             "id": meeting.id,
             "project_id": meeting.project_id,
@@ -102,8 +108,9 @@ def get_meeting_by_id(meeting_id):
             "end_time": meeting.end_time.strftime('%H:%M') if meeting.end_time else None,
             "status": meeting.status,
             "remark": meeting.remark,
-            "created_by": meeting.created_by,
-            "creator_email": meeting.creator.email if meeting.creator else None,
+            "created_by_role_id": meeting.created_by_role_id,
+            "created_by_role": meeting.created_by_role,
+            "created_by_person": created_by_person,
             "created_at": meeting.created_at.isoformat() if meeting.created_at else None
         }
         return jsonify({"meeting": result, "status": 1}), 200

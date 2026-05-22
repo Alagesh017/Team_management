@@ -2,23 +2,25 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.project_allocation_model import ProjectAllocation
-from src.models.user_model import User
+from src.utils.role_utils import get_person_details
 
 def create_allocation(decoded_payload=None):
     try:
         data = request.get_json()
         
         project_id = data.get("project_id")
-        members = data.get("members") # Expecting a list of objects: [{user_id, role}]
+        members = data.get("members", []) # Default to empty list
         start_date_str = data.get("start_date")
         end_date_str = data.get("end_date")
         remark = data.get("remark")
-        allocated_by = data.get("allocated_by")
         
-        if not all([project_id, members, start_date_str, allocated_by]):
-            return jsonify({"msg": "Project ID, members list, start date, and allocator are required", "status": 0}), 400
+        allocated_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
+        allocated_by_role = decoded_payload.get("role") if decoded_payload else None
+        
+        if not all([project_id, start_date_str, allocated_by_role_id, allocated_by_role]):
+            return jsonify({"msg": "Project ID, start date, and allocator are required", "status": 0}), 400
 
-        if not isinstance(members, list):
+        if members and not isinstance(members, list):
             return jsonify({"msg": "Members must be a JSON array", "status": 0}), 400
 
         try:
@@ -33,7 +35,8 @@ def create_allocation(decoded_payload=None):
             start_date=start_date,
             end_date=end_date,
             remark=remark,
-            allocated_by=allocated_by
+            allocated_by_role_id=allocated_by_role_id,
+            allocated_by_role=allocated_by_role
         )
         db.session.add(new_allocation)
         db.session.commit()
@@ -48,17 +51,33 @@ def get_all_allocations():
         allocations = ProjectAllocation.query.all()
         result = []
         for alloc in allocations:
+            allocated_by_person = get_person_details(alloc.allocated_by_role, alloc.allocated_by_role_id)
+            # Enrich members
+            enriched_members = []
+            if alloc.members:
+                for member in alloc.members:
+                    member_role = member.get("role")
+                    member_role_id = member.get("role_id")
+                    if member_role and member_role_id:
+                        member_details = get_person_details(member_role, member_role_id)
+                        if member_details:
+                            enriched_members.append(member_details)
+                        else:
+                            enriched_members.append(member)
+                    else:
+                        enriched_members.append(member)
             result.append({
                 "id": alloc.id,
                 "project_id": alloc.project_id,
                 "project_name": alloc.project.name if alloc.project else None,
                 "project_logo": alloc.project.project_logo if alloc.project else None,
-                "members": alloc.members,
+                "members": enriched_members,
                 "start_date": alloc.start_date.isoformat(),
                 "end_date": alloc.end_date.isoformat() if alloc.end_date else None,
                 "remark": alloc.remark,
-                "allocated_by": alloc.allocated_by,
-                "allocator_email": alloc.allocator.email if alloc.allocator else None,
+                "allocated_by_role_id": alloc.allocated_by_role_id,
+                "allocated_by_role": alloc.allocated_by_role,
+                "allocated_by_person": allocated_by_person,
                 "created_at": alloc.created_at
             })
         return jsonify({"allocations": result, "status": 1}), 200
@@ -78,34 +97,21 @@ def get_allocation_by_project_id(project_id):
                 "status": 1
             }), 200
         
-        # Enrich members with user details (from workers or admins based on role)
-        from src.models.worker_model import Worker
-        from src.models.admin_model import Admin
-
+        allocated_by_person = get_person_details(alloc.allocated_by_role, alloc.allocated_by_role_id)
+        # Enrich members
         enriched_members = []
-        for member in alloc.members:
-            role = member.get("role")
-            role_id = member.get("user_id") # This is actually the ID in the role table
-            
-            member_data = {
-                "role_id": role_id,
-                "role": role,
-                "username": "Unknown",
-                "email": ""
-            }
-
-            if role == "Team Leader" or role == "Worker":
-                worker = Worker.query.get(role_id)
-                if worker:
-                    member_data["username"] = f"{worker.first_name} {worker.last_name}"
-                    member_data["email"] = worker.email
-            elif role == "Admin":
-                admin = Admin.query.get(role_id)
-                if admin:
-                    member_data["username"] = f"{admin.first_name} {admin.last_name}"
-                    member_data["email"] = admin.email
-            
-            enriched_members.append(member_data)
+        if alloc.members:
+            for member in alloc.members:
+                member_role = member.get("role")
+                member_role_id = member.get("role_id")
+                if member_role and member_role_id:
+                    member_details = get_person_details(member_role, member_role_id)
+                    if member_details:
+                        enriched_members.append(member_details)
+                    else:
+                        enriched_members.append(member)
+                else:
+                    enriched_members.append(member)
 
         result = {
             "id": alloc.id,
@@ -116,8 +122,9 @@ def get_allocation_by_project_id(project_id):
             "start_date": alloc.start_date.isoformat(),
             "end_date": alloc.end_date.isoformat() if alloc.end_date else None,
             "remark": alloc.remark,
-            "allocated_by": alloc.allocated_by,
-            "allocator_email": alloc.allocator.email if alloc.allocator else None,
+            "allocated_by_role_id": alloc.allocated_by_role_id,
+            "allocated_by_role": alloc.allocated_by_role,
+            "allocated_by_person": allocated_by_person,
             "created_at": alloc.created_at
         }
         return jsonify({"allocation": result, "status": 1}), 200
@@ -130,17 +137,34 @@ def get_allocation_by_id(allocation_id):
         if not alloc:
             return jsonify({"message": "Allocation not found", "status": 0}), 404
         
+        allocated_by_person = get_person_details(alloc.allocated_by_role, alloc.allocated_by_role_id)
+        # Enrich members
+        enriched_members = []
+        if alloc.members:
+            for member in alloc.members:
+                member_role = member.get("role")
+                member_role_id = member.get("role_id")
+                if member_role and member_role_id:
+                    member_details = get_person_details(member_role, member_role_id)
+                    if member_details:
+                        enriched_members.append(member_details)
+                    else:
+                        enriched_members.append(member)
+                else:
+                    enriched_members.append(member)
+        
         result = {
             "id": alloc.id,
             "project_id": alloc.project_id,
             "project_name": alloc.project.name if alloc.project else None,
             "project_logo": alloc.project.project_logo if alloc.project else None,
-            "members": alloc.members,
+            "members": enriched_members,
             "start_date": alloc.start_date.isoformat(),
             "end_date": alloc.end_date.isoformat() if alloc.end_date else None,
             "remark": alloc.remark,
-            "allocated_by": alloc.allocated_by,
-            "allocator_email": alloc.allocator.email if alloc.allocator else None,
+            "allocated_by_role_id": alloc.allocated_by_role_id,
+            "allocated_by_role": alloc.allocated_by_role,
+            "allocated_by_person": allocated_by_person,
             "created_at": alloc.created_at
         }
         return jsonify({"allocation": result, "status": 1}), 200

@@ -3,9 +3,9 @@ import datetime
 from src import db
 from src.models.project_model import Project
 from src.models.project_allocation_model import ProjectAllocation
-from src.models.user_model import User
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image
+from src.utils.role_utils import get_person_details
 
 def create_project(decoded_payload=None):
     try:
@@ -18,7 +18,6 @@ def create_project(decoded_payload=None):
         end_date_str = data.get("end_date")
         status = data.get("status", "active")
         group_id = data.get("group_id")
-        created_by = data.get("created_by")
 
         remark = data.get("remark")
         project_logo = data.get("project_logo")
@@ -27,7 +26,10 @@ def create_project(decoded_payload=None):
         saved_logo_url = save_image(project_logo, folder="project_logos")
         final_logo_url = saved_logo_url if saved_logo_url else project_logo
         
-        if not all([name, start_date_str, end_date_str, created_by]):
+        created_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
+        created_by_role = decoded_payload.get("role") if decoded_payload else None
+        
+        if not all([name, start_date_str, end_date_str, created_by_role_id, created_by_role]):
             return jsonify({"msg": "Project name, start date, end date, and creator are required", "status": 0}), 400
 
         start_date = parse_date(start_date_str)
@@ -46,7 +48,8 @@ def create_project(decoded_payload=None):
             status=status,
             project_logo=final_logo_url,
             remark=remark,
-            created_by=created_by
+            created_by_role_id=created_by_role_id,
+            created_by_role=created_by_role
         )
         db.session.add(new_project)
         db.session.commit()
@@ -58,7 +61,8 @@ def create_project(decoded_payload=None):
             start_date=start_date,
             end_date=end_date,
             remark=remark,
-            allocated_by=created_by
+            allocated_by_role_id=created_by_role_id,
+            allocated_by_role=created_by_role
         )
         db.session.add(new_allocation)
         db.session.commit()
@@ -73,6 +77,7 @@ def get_all_projects():
         projects = Project.query.all()
         result = []
         for project in projects:
+            created_by_person = get_person_details(project.created_by_role, project.created_by_role_id)
             result.append({
                 "id": project.id,
                 "client_id": project.client_id,
@@ -86,8 +91,9 @@ def get_all_projects():
                 "status": project.status,
                 "project_logo": project.project_logo,
                 "remark": project.remark,
-                "created_by": project.created_by,
-                "creator_email": project.creator.email if project.creator else None,
+                "created_by_role_id": project.created_by_role_id,
+                "created_by_role": project.created_by_role,
+                "created_by_person": created_by_person,
                 "created_at": project.created_at
             })
         return jsonify({"projects": result, "status": 1}), 200
@@ -100,6 +106,7 @@ def get_project_by_id(project_id):
         if not project:
             return jsonify({"message": "Project not found", "status": 0}), 404
         
+        created_by_person = get_person_details(project.created_by_role, project.created_by_role_id)
         result = {
             "id": project.id,
             "client_id": project.client_id,
@@ -113,8 +120,9 @@ def get_project_by_id(project_id):
             "status": project.status,
             "project_logo": project.project_logo,
             "remark": project.remark,
-            "created_by": project.created_by,
-            "creator_email": project.creator.email if project.creator else None,
+            "created_by_role_id": project.created_by_role_id,
+            "created_by_role": project.created_by_role,
+            "created_by_person": created_by_person,
             "created_at": project.created_at
         }
         return jsonify({"project": result, "status": 1}), 200

@@ -27,7 +27,9 @@ def create_admin():
         is_scrum = data.get("is_scrum", False)
         remark = data.get("remark")
 
-        experience_years = data.get("experience_years",0)
+        experience_years = data.get("experience_years")
+        if experience_years == "":
+            experience_years = None
         working_hours = data.get("working_hours")
         work_mode = data.get("work_mode")
         office_location = data.get("office_location")
@@ -211,7 +213,11 @@ def update_admin(admin_id):
         if "is_scrum" in data:
             admin.is_scrum = data["is_scrum"]
         if "experience_years" in data:
-            admin.experience_years = data["experience_years"]
+            exp_val = data["experience_years"]
+            if exp_val == "":
+                admin.experience_years = None
+            else:
+                admin.experience_years = exp_val
         if "working_hours" in data:
             admin.working_hours = data["working_hours"]
         if "work_mode" in data:
