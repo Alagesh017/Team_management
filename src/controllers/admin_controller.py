@@ -204,6 +204,8 @@ def update_admin(admin_id):
             admin.last_name = data["last_name"]
         if "email" in data:
             admin.email = data["email"]
+            if user:
+                user.email = data["email"]
         if "phone" in data:
             admin.phone = data["phone"]
         if "is_superadmin" in data:

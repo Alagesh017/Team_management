@@ -205,6 +205,8 @@ def update_worker(worker_id):
             worker.phone = data["phone"]
         if "email" in data:
             worker.email = data["email"]
+            if user:
+                user.email = data["email"]
         if "avatar_url" in data:
             # Save image if provided as base64
             saved_url = save_image(data["avatar_url"])

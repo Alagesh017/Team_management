@@ -50,30 +50,65 @@ def create_task(decoded_payload=None):
 
         start_date = parse_date(start_date_str) if start_date_str else None
         due_date = parse_date(due_date_str) if due_date_str else None
-
-        new_task = Task(
-            project_id=project_id,
-            allocation_id=allocation_id,
-            status_id=status_id,
-            title=title,
-            description=description,
-            goal=goal,
-            priority=priority,
-            start_date=start_date,
-            due_date=due_date,
-            members=members,
-            worker_ids=worker_ids if worker_ids else None, # Backward compatibility
-            assigned_by_role_id=assigned_by_role_id,
-            assigned_by_role=assigned_by_role,
-            assigned_by=assigned_by_user_id if assigned_by_user_id else None, # Backward compatibility
-            estimated_hours=estimated_hours,
-            actual_hours=actual_hours,
-            remark=remark
-        )
-        db.session.add(new_task)
+        
+        created_task_ids = []
+        
+        # If there are members, create a separate task for each member
+        if members and len(members) > 0:
+            for member in members:
+                # Wrap single member in a list for the task
+                task_members = [member]
+                
+                new_task = Task(
+                    project_id=project_id,
+                    allocation_id=allocation_id,
+                    status_id=status_id,
+                    title=title,
+                    description=description,
+                    goal=goal,
+                    priority=priority,
+                    start_date=start_date,
+                    due_date=due_date,
+                    members=task_members,
+                    worker_ids=[member] if worker_ids else None, # Backward compatibility
+                    assigned_by_role_id=assigned_by_role_id,
+                    assigned_by_role=assigned_by_role,
+                    assigned_by=assigned_by_user_id if assigned_by_user_id else None, # Backward compatibility
+                    estimated_hours=estimated_hours,
+                    actual_hours=actual_hours,
+                    remark=remark
+                )
+                db.session.add(new_task)
+                db.session.flush()
+                created_task_ids.append(new_task.id)
+        else:
+            # If no members, create single task
+            new_task = Task(
+                project_id=project_id,
+                allocation_id=allocation_id,
+                status_id=status_id,
+                title=title,
+                description=description,
+                goal=goal,
+                priority=priority,
+                start_date=start_date,
+                due_date=due_date,
+                members=members,
+                worker_ids=worker_ids if worker_ids else None, # Backward compatibility
+                assigned_by_role_id=assigned_by_role_id,
+                assigned_by_role=assigned_by_role,
+                assigned_by=assigned_by_user_id if assigned_by_user_id else None, # Backward compatibility
+                estimated_hours=estimated_hours,
+                actual_hours=actual_hours,
+                remark=remark
+            )
+            db.session.add(new_task)
+            db.session.flush()
+            created_task_ids.append(new_task.id)
+        
         db.session.commit()
         
-        return jsonify({"msg": "Task created successfully", "status": 1, "task_id": new_task.id}), 201
+        return jsonify({"msg": "Task(s) created successfully", "status": 1, "task_ids": created_task_ids}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500

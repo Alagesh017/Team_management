@@ -7,6 +7,7 @@ from src.utils.role_utils import get_person_details
 def create_allocation(decoded_payload=None):
     try:
         data = request.get_json()
+        print(data)
         
         project_id = data.get("project_id")
         members = data.get("members", []) # Default to empty list
@@ -14,11 +15,11 @@ def create_allocation(decoded_payload=None):
         end_date_str = data.get("end_date")
         remark = data.get("remark")
         
-        allocated_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
-        allocated_by_role = decoded_payload.get("role") if decoded_payload else None
+        allocated_by_role_id = data.get("role_id")
+        allocated_by_role = data.get("role")
         
         if not all([project_id, start_date_str, allocated_by_role_id, allocated_by_role]):
-            return jsonify({"msg": "Project ID, start date, and allocator are required", "status": 0}), 400
+            return jsonify({"msg": "Project ID, start date, role_id, and role are required", "status": 0}), 400
 
         if members and not isinstance(members, list):
             return jsonify({"msg": "Members must be a JSON array", "status": 0}), 400
