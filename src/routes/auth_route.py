@@ -4,6 +4,7 @@ from src.controllers.auth_controller import (
     register_controller,
     token_refresh_controller,
     google_login_controller,
+    microsoft_login_controller,
 )
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
@@ -25,6 +26,12 @@ def login():
 @auth_bp.route("/google-login", methods=["POST"])
 def google_login():
     return google_login_controller()
+
+
+# Microsoft Login route
+@auth_bp.route("/microsoft-login", methods=["POST"])
+def microsoft_login():
+    return microsoft_login_controller()
 
 
 # Token Refresh route

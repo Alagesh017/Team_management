@@ -208,15 +208,20 @@ def get_project_task_data(project_id):
             
             tasks_with_workers.append(task_data)
         
+        status_map = {status.id: status for status in statuses}
+        
         statuses_with_tasks = []
         for status in statuses:
             status_tasks = [task for task in tasks_with_workers if task["status_id"] == status.id]
+            for task in status_tasks:
+                task["is_confidential"] = status.is_confidential
             statuses_with_tasks.append({
                 "status_id": status.id,
                 "name": status.name,
                 "color": status.color,
                 "sort_order": status.sort_order,
                 "remark": status.remark,
+                "is_confidential": status.is_confidential,
                 "tasks": status_tasks
             })
         

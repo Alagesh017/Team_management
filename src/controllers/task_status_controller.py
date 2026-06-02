@@ -10,6 +10,7 @@ def create_task_status():
         color = data.get("color")
         sort_order = data.get("sort_order", 0)
         remark = data.get("remark")
+        is_confidential = data.get("is_confidential", False)
 
         if not name:
             return jsonify({"msg": "Status name is required", "status": 0}), 400
@@ -21,7 +22,8 @@ def create_task_status():
             name=name,
             color=color,
             sort_order=sort_order,
-            remark=remark
+            remark=remark,
+            is_confidential=is_confidential
         )
         db.session.add(new_status)
         db.session.commit()
@@ -42,6 +44,7 @@ def get_all_task_statuses():
                 "color": status.color,
                 "sort_order": status.sort_order,
                 "remark": status.remark,
+                "is_confidential": status.is_confidential,
                 "created_at": status.created_at
             })
         return jsonify({"task_statuses": result, "status": 1}), 200
@@ -60,6 +63,7 @@ def get_task_status_by_id(status_id):
             "color": status.color,
             "sort_order": status.sort_order,
             "remark": status.remark,
+            "is_confidential": status.is_confidential,
             "created_at": status.created_at
         }
         return jsonify({"task_status": result, "status": 1}), 200
@@ -86,6 +90,8 @@ def update_task_status(status_id):
             status.sort_order = data["sort_order"]
         if "remark" in data:
             status.remark = data["remark"]
+        if "is_confidential" in data:
+            status.is_confidential = data["is_confidential"]
             
         db.session.commit()
         return jsonify({"message": "Task status updated successfully", "status": 1}), 200

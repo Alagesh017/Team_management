@@ -9,6 +9,7 @@ class TaskStatus(db.Model):
     color = db.Column(db.String(10), nullable=True) # hex e.g. #FF5630
     sort_order = db.Column(db.Integer, default=0)
     remark = db.Column(db.Text, nullable=True)
+    is_confidential = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     

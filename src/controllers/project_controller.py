@@ -21,8 +21,9 @@ def create_project(decoded_payload=None):
 
         remark = data.get("remark")
         project_logo = data.get("project_logo")
-        moderate_access = data.get("moderate_access", False)
-        high_access = data.get("high_access", False)
+        by_tl_managed = data.get("by_tl_managed", False)
+        team_managed = data.get("team_managed", False)
+        company_managed = data.get("company_managed", False)
         
         # Save project logo if provided as base64
         saved_logo_url = save_image(project_logo, folder="project_logos")
@@ -50,8 +51,9 @@ def create_project(decoded_payload=None):
             status=status,
             project_logo=final_logo_url,
             remark=remark,
-            moderate_access=moderate_access,
-            high_access=high_access,
+            by_tl_managed=by_tl_managed,
+            team_managed=team_managed,
+            company_managed=company_managed,
             created_by_role_id=created_by_role_id,
             created_by_role=created_by_role
         )
@@ -115,8 +117,9 @@ def get_all_projects():
                 "status": project.status,
                 "project_logo": project.project_logo,
                 "remark": project.remark,
-                "moderate_access": project.moderate_access,
-                "high_access": project.high_access,
+                "by_tl_managed": project.by_tl_managed,
+                "team_managed": project.team_managed,
+                "company_managed": project.company_managed,
                 "created_by_role_id": project.created_by_role_id,
                 "created_by_role": project.created_by_role,
                 "created_by_person": created_by_person,
@@ -146,8 +149,9 @@ def get_project_by_id(project_id):
             "status": project.status,
             "project_logo": project.project_logo,
             "remark": project.remark,
-            "moderate_access": project.moderate_access,
-            "high_access": project.high_access,
+            "by_tl_managed": project.by_tl_managed,
+            "team_managed": project.team_managed,
+            "company_managed": project.company_managed,
             "created_by_role_id": project.created_by_role_id,
             "created_by_role": project.created_by_role,
             "created_by_person": created_by_person,
@@ -185,10 +189,12 @@ def update_project(project_id):
             project.project_logo = saved_logo_url if saved_logo_url else project_logo
         if "remark" in data:
             project.remark = data["remark"]
-        if "moderate_access" in data:
-            project.moderate_access = data["moderate_access"]
-        if "high_access" in data:
-            project.high_access = data["high_access"]
+        if "by_tl_managed" in data:
+            project.by_tl_managed = data["by_tl_managed"]
+        if "team_managed" in data:
+            project.team_managed = data["team_managed"]
+        if "company_managed" in data:
+            project.company_managed = data["company_managed"]
             
         db.session.commit()
         return jsonify({"message": "Project updated successfully", "status": 1}), 200

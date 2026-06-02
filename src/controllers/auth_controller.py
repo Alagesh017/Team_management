@@ -177,6 +177,52 @@ def google_login_controller():
         return jsonify({"success": 0, "error": str(e)}), 500
 
 
+def microsoft_login_controller():
+    try:
+        data = request.get_json()
+        print(data)
+        email = data.get("email")
+
+        if not email:
+            return jsonify({"message": "Email is required", "status": 0}), 400
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            return jsonify({"message": "User with this Microsoft account not found. Please register first.", "status": 0}), 404
+
+        if not user.is_active:
+            return jsonify({"message": "User account is inactive", "status": 0}), 403
+
+        access_token = generate_jwt_token(user.id, user.role_id, user.role)
+        refresh_token = generate_jwt_token(user.id, user.role_id, user.role, is_refresh=True)
+
+        user.refresh_token = refresh_token
+        user.refresh_token_created_at = datetime.datetime.utcnow()
+        
+        if user.role in ["superadmin", "admin", "scrum"]:
+            admin = Admin.query.get(user.role_id)
+            if admin:
+                admin.last_login = datetime.datetime.utcnow()
+                
+        db.session.commit()
+
+        return jsonify({
+            "message": "Login successful",
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "email": user.email,
+            "role": user.role,
+            "user_id": user.id,
+            "role_id": user.role_id,
+            "status": 1,
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+
 def token_refresh_controller():
     try:
         refresh_token = request.headers.get("Authorization")

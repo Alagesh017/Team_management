@@ -15,8 +15,9 @@ class Project(db.Model):
     status = db.Column(db.String(30), default='active') # active | on_hold | completed | cancelled
     project_logo = db.Column(db.String(500), nullable=True)
     remark = db.Column(db.Text, nullable=True)
-    moderate_access = db.Column(db.Boolean, default=False, nullable=False)
-    high_access = db.Column(db.Boolean, default=False, nullable=False)
+    by_tl_managed = db.Column(db.Boolean, default=False, nullable=False)
+    team_managed = db.Column(db.Boolean, default=False, nullable=False)
+    company_managed = db.Column(db.Boolean, default=False, nullable=False)
     created_by_role_id = db.Column(db.Integer, nullable=False)
     created_by_role = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
