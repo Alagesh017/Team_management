@@ -6,6 +6,7 @@ from src.controllers.task_controller import (
     get_task_by_id,
     update_task,
     delete_task,
+    get_dashboard_tasks,
 )
 from src.utils.jwt import token_required
 
@@ -35,3 +36,7 @@ def update_task_route(task_id):
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
 def delete_task_route(task_id):
     return delete_task(task_id)
+
+@task_bp.route("/dashboard", methods=["GET"])
+def get_dashboard_tasks_route():
+    return get_dashboard_tasks()
