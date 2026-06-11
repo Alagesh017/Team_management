@@ -37,3 +37,7 @@ instance/config.py
 
 # macOS system files
 .DS_Store
+
+# Uploaded assets
+src/assets/profile_images/
+src/assets/project_logos/
