@@ -10,6 +10,7 @@ from src.utils.role_utils import get_person_details
 def create_project(decoded_payload=None):
     try:
         data = request.get_json()
+        print(data)
         
         client_id = data.get("client_id")
         name = data.get("name")
@@ -32,7 +33,7 @@ def create_project(decoded_payload=None):
         created_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
         created_by_role = decoded_payload.get("role") if decoded_payload else None
         
-        if not all([name, start_date_str, end_date_str, created_by_role_id, created_by_role]):
+        if not all([name, start_date_str, end_date_str]):
             return jsonify({"msg": "Project name, start date, end date, and creator are required", "status": 0}), 400
 
         start_date = parse_date(start_date_str)

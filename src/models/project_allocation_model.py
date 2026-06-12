@@ -10,8 +10,8 @@ class ProjectAllocation(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=True)
     remark = db.Column(db.Text, nullable=True)
-    allocated_by_role_id = db.Column(db.Integer, nullable=False)
-    allocated_by_role = db.Column(db.String(50), nullable=False)
+    allocated_by_role_id = db.Column(db.Integer, nullable=True)
+    allocated_by_role = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     

@@ -41,3 +41,47 @@ def save_image(image_data, folder="profile_images"):
         if current_app:
             current_app.logger.error(f"Error in save_image: {e}")
         return None
+
+def save_file(file_data, folder="project_excels", file_ext="xlsx"):
+    try:
+        if not file_data:
+            return None
+        
+        # Check if it's already a saved path or an external URL
+        if isinstance(file_data, str) and (file_data.startswith("/src/assets/") or file_data.startswith("/api/v1/src/assets/") or file_data.startswith("http")):
+            return file_data
+        
+        # Check if it's a base64 string
+        if isinstance(file_data, str) and file_data.startswith("data:"):
+            try:
+                # Extract the file extension if available, otherwise use the provided one
+                if file_data.startswith("data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"):
+                    file_ext = "xlsx"
+                elif file_data.startswith("data:application/vnd.ms-excel"):
+                    file_ext = "xls"
+                
+                header, encoded = file_data.split(",", 1)
+                filename = f"{uuid.uuid4()}.{file_ext}"
+                
+                # Ensure the target directory exists
+                base_path = current_app.config["SERVE_STATIC_FOLDER"]
+                target_dir = os.path.join(base_path, folder)
+                if not os.path.exists(target_dir):
+                    os.makedirs(target_dir, exist_ok=True)
+                
+                filepath = os.path.join(target_dir, filename)
+                
+                with open(filepath, "wb") as f:
+                    f.write(base64.b64decode(encoded))
+                
+                # Return the relative URL for frontend consumption
+                return f"/src/assets/{folder}/{filename}"
+            except Exception as inner_e:
+                current_app.logger.error(f"Failed to decode/save base64 file: {inner_e}")
+                return None
+            
+        return None
+    except Exception as e:
+        if current_app:
+            current_app.logger.error(f"Error in save_file: {e}")
+        return None

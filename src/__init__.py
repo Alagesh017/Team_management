@@ -19,6 +19,7 @@ def create_app():
 
     # Create app
     app = Flask(__name__)
+    app.url_map.strict_slashes = False
 
     # Handling CORS
     CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)

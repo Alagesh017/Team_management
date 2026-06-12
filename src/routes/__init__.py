@@ -16,6 +16,7 @@ from src.routes.activity_log_route import activity_log_bp
 from src.routes.project_group_route import project_group_bp
 from src.routes.project_member_route import project_member_bp
 from src.routes.project_task_route import project_task_bp
+from src.routes.project_excel_route import project_excel_bp
 
 
 def init_routes(app):
@@ -37,5 +38,6 @@ def init_routes(app):
     app.register_blueprint(project_group_bp)
     app.register_blueprint(project_member_bp)
     app.register_blueprint(project_task_bp)
+    app.register_blueprint(project_excel_bp)
 
 
