@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, current_app, send_from_directory
+from flask import Flask, current_app, send_from_directory, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -22,7 +22,28 @@ def create_app():
     app.url_map.strict_slashes = False
 
     # Handling CORS
-    CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
+    CORS(
+        app,
+        resources={
+            r"/*": {
+                "origins": "*",
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+                "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"],
+                "expose_headers": ["Content-Type", "Authorization"]
+            }
+        },
+        supports_credentials=True
+    )
+
+    # Handle OPTIONS requests explicitly
+    @app.before_request
+    def handle_options_request():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Accept, Origin"
+            return response
 
     # Middlewares
     # Agent check

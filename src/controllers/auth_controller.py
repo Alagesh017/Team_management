@@ -16,15 +16,14 @@ def register_controller():
         data = request.get_json()
 
         email = data.get("email")
-        password = data.get("password")
         role = data.get("role")
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
         avatar_url = data.get("avatar_url")
 
-        if not all([email, password, role]):
-            return jsonify({"msg": "Email, Password and Role are mandatory", "status": 0}), 400
+        if not all([email, role]):
+            return jsonify({"msg": "Email and Role are mandatory", "status": 0}), 400
 
         valid_roles = ["superadmin", "admin", "scrum", "team_leader", "worker"]
         if role not in valid_roles:
@@ -36,6 +35,8 @@ def register_controller():
         # Save image if provided
         final_avatar_url = save_image(avatar_url) or avatar_url
 
+        # Use default password if not provided
+        password = "DCE@2026"
         hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
         # Create Admin or Worker based on role

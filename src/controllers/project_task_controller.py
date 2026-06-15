@@ -238,9 +238,14 @@ def get_project_task_data(project_id):
         
         all_admins_list = []
         for admin in all_admins:
+            # Determine role for admin
+            admin_role = "superadmin" if admin.is_superadmin else "admin"
+            if admin.is_scrum:
+                admin_role = "scrum"
             all_admins_list.append({
                 "user_id": admin.id,
                 "type": "admin",
+                "role": admin_role,  # Added role field
                 "first_name": admin.first_name,
                 "last_name": admin.last_name,
                 "email": admin.email,
