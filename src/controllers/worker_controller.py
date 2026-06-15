@@ -209,9 +209,14 @@ def update_worker(worker_id):
         if "phone" in data:
             worker.phone = data["phone"]
         if "email" in data:
-            worker.email = data["email"]
+            new_email = data["email"]
+            # Check if email is already taken by another user
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user and existing_user.id != user.id:
+                return jsonify({"msg": f"User with email '{new_email}' already exists", "status": 0}), 409
+            worker.email = new_email
             if user:
-                user.email = data["email"]
+                user.email = new_email
         if "avatar_url" in data:
             new_avatar = data["avatar_url"]
             
@@ -298,6 +303,10 @@ def update_worker(worker_id):
         return jsonify({"message": "Worker updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
+        # Check for duplicate entry error
+        if "Duplicate entry" in str(e):
+            if "email" in str(e):
+                return jsonify({"msg": "Email already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def delete_worker(worker_id):

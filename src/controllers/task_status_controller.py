@@ -34,6 +34,10 @@ def create_task_status():
         return jsonify({"msg": "Task status created successfully", "status": 1, "id": new_status.id}), 201
     except Exception as e:
         db.session.rollback()
+        # Check for duplicate entry error
+        if "Duplicate entry" in str(e):
+            if "name" in str(e):
+                return jsonify({"msg": "Status name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def get_all_task_statuses():
@@ -100,6 +104,10 @@ def update_task_status(status_id):
         return jsonify({"message": "Task status updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
+        # Check for duplicate entry error
+        if "Duplicate entry" in str(e):
+            if "name" in str(e):
+                return jsonify({"msg": "Status name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def delete_task_status(status_id):

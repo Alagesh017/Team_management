@@ -5,7 +5,7 @@ from src import db
 from src.models.admin_model import Admin
 from src.models.user_model import User
 from src.utils.date_utils import parse_date
-from src.utils.image_utils import save_image
+from src.utils.image_utils import save_image, delete_image
 
 def create_admin():
     try:
@@ -187,25 +187,41 @@ def update_admin(admin_id):
         data = request.get_json()
         
         if "avatar_url" in data:
-            # Save image if provided as base64
-            saved_url = save_image(data["avatar_url"])
-            if saved_url:
-                admin.avatar_url = saved_url
+            new_avatar = data["avatar_url"]
+            
+            # Check if removing the avatar
+            if new_avatar == "" or new_avatar is None:
+                # Delete old image if exists
+                delete_image(admin.avatar_url)
+                admin.avatar_url = None
             else:
-                # If save_image failed or wasn't base64, only update if it's not a super long string
-                # or if it's a valid existing URL/path
-                new_url = data["avatar_url"]
-                if new_url and len(new_url) < 1000: # Safety check
-                    admin.avatar_url = new_url
+                # Save image if provided as base64
+                saved_url = save_image(new_avatar)
+                if saved_url:
+                    # Delete old image before setting new one
+                    delete_image(admin.avatar_url)
+                    admin.avatar_url = saved_url
+                else:
+                    # If save_image failed or wasn't base64, only update if it's not a super long string
+                    # or if it's a valid existing URL/path
+                    if new_avatar and len(new_avatar) < 1000: # Safety check
+                        # Delete old image before setting new one
+                        delete_image(admin.avatar_url)
+                        admin.avatar_url = new_avatar
             
         if "first_name" in data:
             admin.first_name = data["first_name"]
         if "last_name" in data:
             admin.last_name = data["last_name"]
         if "email" in data:
-            admin.email = data["email"]
+            new_email = data["email"]
+            # Check if email is already taken by another user
+            existing_user = User.query.filter_by(email=new_email).first()
+            if existing_user and existing_user.id != user.id:
+                return jsonify({"msg": f"User with email '{new_email}' already exists", "status": 0}), 409
+            admin.email = new_email
             if user:
-                user.email = data["email"]
+                user.email = new_email
         if "phone" in data:
             admin.phone = data["phone"]
         if "is_superadmin" in data:
@@ -266,6 +282,10 @@ def update_admin(admin_id):
         return jsonify({"message": "Admin updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
+        # Check for duplicate entry error
+        if "Duplicate entry" in str(e):
+            if "email" in str(e):
+                return jsonify({"msg": "Email already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def delete_admin(admin_id):

@@ -15,7 +15,7 @@ def create_project_group():
         # Check if group name already exists
         existing_group = ProjectGroup.query.filter_by(name=name).first()
         if existing_group:
-            return jsonify({"msg": "Project group name already exists", "status": 0}), 400
+            return jsonify({"msg": "Project group name already exists", "status": 0}), 409
 
         new_group = ProjectGroup(
             name=name,
@@ -27,6 +27,10 @@ def create_project_group():
         return jsonify({"msg": "Project group created successfully", "status": 1, "id": new_group.id}), 201
     except Exception as e:
         db.session.rollback()
+        # Check for duplicate entry error
+        if "Duplicate entry" in str(e):
+            if "name" in str(e):
+                return jsonify({"msg": "Project group name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def get_all_project_groups():
@@ -82,7 +86,7 @@ def update_project_group(group_id):
             # Check if name is taken by another group
             existing = ProjectGroup.query.filter_by(name=name).first()
             if existing and existing.id != group_id:
-                return jsonify({"msg": "Project group name already exists", "status": 0}), 400
+                return jsonify({"msg": "Project group name already exists", "status": 0}), 409
             group.name = name
             
         if "description" in data:
@@ -92,6 +96,10 @@ def update_project_group(group_id):
         return jsonify({"msg": "Project group updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
+        # Check for duplicate entry error
+        if "Duplicate entry" in str(e):
+            if "name" in str(e):
+                return jsonify({"msg": "Project group name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
 def delete_project_group(group_id):
