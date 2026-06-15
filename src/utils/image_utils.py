@@ -42,6 +42,39 @@ def save_image(image_data, folder="profile_images"):
             current_app.logger.error(f"Error in save_image: {e}")
         return None
 
+def delete_image(image_url):
+    try:
+        if not image_url:
+            return True
+        
+        # Skip if it's an external URL (not our asset)
+        if image_url.startswith("http") and not image_url.startswith("/src/assets/") and not image_url.startswith("/api/v1/src/assets/"):
+            return True
+        
+        # Extract the file path from the URL
+        if image_url.startswith("/api/v1/src/assets/"):
+            relative_path = image_url.replace("/api/v1/src/assets/", "")
+        elif image_url.startswith("/src/assets/"):
+            relative_path = image_url.replace("/src/assets/", "")
+        else:
+            # Not our asset format, skip
+            return True
+        
+        # Get the full file path
+        base_path = current_app.config["SERVE_STATIC_FOLDER"]
+        full_path = os.path.join(base_path, relative_path)
+        
+        # Delete the file if it exists
+        if os.path.exists(full_path) and os.path.isfile(full_path):
+            os.remove(full_path)
+            return True
+        
+        return False
+    except Exception as e:
+        if current_app:
+            current_app.logger.error(f"Error in delete_image: {e}")
+        return False
+
 def save_file(file_data, folder="project_excels", file_ext="xlsx"):
     try:
         if not file_data:

@@ -216,10 +216,13 @@ def update_admin(admin_id):
             admin.is_scrum = data["is_scrum"]
         if "experience_years" in data:
             exp_val = data["experience_years"]
-            if exp_val == "":
+            if exp_val == "" or exp_val is None:
                 admin.experience_years = None
             else:
-                admin.experience_years = exp_val
+                try:
+                    admin.experience_years = float(exp_val)
+                except (ValueError, TypeError):
+                    admin.experience_years = None
         if "working_hours" in data:
             admin.working_hours = data["working_hours"]
         if "work_mode" in data:
@@ -270,11 +273,49 @@ def delete_admin(admin_id):
         admin = Admin.query.get(admin_id)
         if not admin:
             return jsonify({"message": "Admin not found", "status": 0}), 404
+        
+        # Check if admin is in any project allocation (with admin roles)
+        from src.models.project_allocation_model import ProjectAllocation
+        allocations = ProjectAllocation.query.all()
+        in_allocation = False
+        for alloc in allocations:
+            if alloc.members:
+                for member in alloc.members:
+                    member_role = member.get("role") or member.get("type")
+                    if member.get("user_id") == admin_id and member_role in ["admin", "superadmin", "scrum"]:
+                        in_allocation = True
+                        break
+            if in_allocation:
+                break
+        
+        # Check if admin is in any task (with admin role only for task table)
+        from src.models.task_model import Task
+        tasks = Task.query.all()
+        in_task = False
+        for task in tasks:
+            task_members = task.worker_ids if task.worker_ids else task.members
+            if task_members:
+                for member in task_members:
+                    member_role = member.get("role") or member.get("type")
+                    if member.get("user_id") == admin_id and member_role == "admin":
+                        in_task = True
+                        break
+            if in_task:
+                break
+        
+        if in_allocation or in_task:
+            return jsonify({
+                "msg": "Cannot delete this admin because they are allocated to projects or assigned to tasks", 
+                "status": 0
+            }), 400
             
         user = User.query.filter_by(role_id=admin.id).filter(User.role.in_(['superadmin', 'admin', 'scrum'])).first()
         if user:
             db.session.delete(user)
             
+        # Delete avatar image if exists
+        delete_image(admin.avatar_url)
+        
         db.session.delete(admin)
         db.session.commit()
         return jsonify({"message": "Admin deleted successfully", "status": 1}), 200

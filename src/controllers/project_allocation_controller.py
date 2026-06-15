@@ -108,7 +108,9 @@ def get_allocation_by_project_id(project_id):
                 if member_role and member_role_id:
                     member_details = get_person_details(member_role, member_role_id)
                     if member_details:
-                        enriched_members.append(member_details)
+                        # Merge member details with original member to preserve client_contact
+                        merged_member = {**member_details, **member}
+                        enriched_members.append(merged_member)
                     else:
                         enriched_members.append(member)
                 else:
@@ -148,7 +150,9 @@ def get_allocation_by_id(allocation_id):
                 if member_role and member_role_id:
                     member_details = get_person_details(member_role, member_role_id)
                     if member_details:
-                        enriched_members.append(member_details)
+                        # Merge member details with original member to preserve client_contact
+                        merged_member = {**member_details, **member}
+                        enriched_members.append(merged_member)
                     else:
                         enriched_members.append(member)
                 else:
@@ -224,11 +228,12 @@ def delete_allocation(allocation_id):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
         if not alloc:
-            return jsonify({"message": "Allocation not found", "status": 0}), 404
+            return jsonify({"msg": "Allocation not found", "status": 0}), 404
             
         db.session.delete(alloc)
         db.session.commit()
-        return jsonify({"message": "Allocation deleted successfully", "status": 1}), 200
+        return jsonify({"msg": "Allocation deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        print(f"Error deleting allocation: {str(e)}")
+        return jsonify({"success": 0, "msg": "Failed to delete allocation. Please try again later.", "status": 0}), 500

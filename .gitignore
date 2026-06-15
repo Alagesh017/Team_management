@@ -41,3 +41,4 @@ instance/config.py
 # Uploaded assets
 src/assets/profile_images/
 src/assets/project_logos/
+src/assets/project_excels/

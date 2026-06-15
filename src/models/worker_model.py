@@ -14,7 +14,7 @@ class Worker(db.Model):
     is_worker = db.Column(db.Boolean, default=True)
     job_title = db.Column(db.String(255), nullable=True)
     department = db.Column(db.String(255), nullable=True)
-    experience_years = db.Column(db.Integer, nullable=True)
+    experience_years = db.Column(db.Float, nullable=True)
     working_hours = db.Column(db.String(50), nullable=True)
     work_mode = db.Column(db.Enum('WFH', 'OFFICE', 'HYBRID', name='worker_work_mode_enum'), nullable=True)
     office_location = db.Column(db.String(255), nullable=True)

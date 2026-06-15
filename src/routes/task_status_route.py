@@ -5,6 +5,7 @@ from src.controllers.task_status_controller import (
     get_task_status_by_id,
     update_task_status,
     delete_task_status,
+    reorder_task_statuses,
 )
 from src.utils.jwt import token_required
 
@@ -19,6 +20,11 @@ def create_task_status_route():
 # @token_required
 def get_task_statuses_route():
     return get_all_task_statuses()
+
+@task_status_bp.route("/reorder", methods=["PUT"])
+# @token_required
+def reorder_task_statuses_route():
+    return reorder_task_statuses()
 
 @task_status_bp.route("/<int:status_id>", methods=["GET"])
 # @token_required

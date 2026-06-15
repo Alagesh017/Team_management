@@ -4,7 +4,7 @@ from src import db
 from src.models.worker_model import Worker
 from src.models.user_model import User
 from src.utils.date_utils import parse_date
-from src.utils.image_utils import save_image
+from src.utils.image_utils import save_image, delete_image
 
 def create_worker():
     try:
@@ -28,8 +28,13 @@ def create_worker():
         job_title = data.get("job_title")
         department = data.get("department")
         experience_years = data.get("experience_years")
-        if experience_years == "":
+        if experience_years == "" or experience_years is None:
             experience_years = None
+        else:
+            try:
+                experience_years = float(experience_years)
+            except (ValueError, TypeError):
+                experience_years = None
         working_hours = data.get("working_hours")
         work_mode = data.get("work_mode")
         office_location = data.get("office_location")
@@ -208,16 +213,27 @@ def update_worker(worker_id):
             if user:
                 user.email = data["email"]
         if "avatar_url" in data:
-            # Save image if provided as base64
-            saved_url = save_image(data["avatar_url"])
-            if saved_url:
-                worker.avatar_url = saved_url
+            new_avatar = data["avatar_url"]
+            
+            # Check if removing the avatar
+            if new_avatar == "" or new_avatar is None:
+                # Delete old image if exists
+                delete_image(worker.avatar_url)
+                worker.avatar_url = None
             else:
-                # If save_image failed or wasn't base64, only update if it's not a super long string
-                # or if it's a valid existing URL/path
-                new_url = data["avatar_url"]
-                if new_url and len(new_url) < 1000: # Safety check
-                    worker.avatar_url = new_url
+                # Save image if provided as base64
+                saved_url = save_image(new_avatar)
+                if saved_url:
+                    # Delete old image before setting new one
+                    delete_image(worker.avatar_url)
+                    worker.avatar_url = saved_url
+                else:
+                    # If save_image failed or wasn't base64, only update if it's not a super long string
+                    # or if it's a valid existing URL/path
+                    if new_avatar and len(new_avatar) < 1000: # Safety check
+                        # Delete old image before setting new one
+                        delete_image(worker.avatar_url)
+                        worker.avatar_url = new_avatar
         if "is_tl" in data:
             worker.is_tl = data["is_tl"]
         if "is_worker" in data:
@@ -228,10 +244,13 @@ def update_worker(worker_id):
             worker.department = data["department"]
         if "experience_years" in data:
             exp_val = data["experience_years"]
-            if exp_val == "":
+            if exp_val == "" or exp_val is None:
                 worker.experience_years = None
             else:
-                worker.experience_years = exp_val
+                try:
+                    worker.experience_years = float(exp_val)
+                except (ValueError, TypeError):
+                    worker.experience_years = None
         if "working_hours" in data:
             worker.working_hours = data["working_hours"]
         if "work_mode" in data:
@@ -286,11 +305,48 @@ def delete_worker(worker_id):
         worker = Worker.query.get(worker_id)
         if not worker:
             return jsonify({"message": "Worker not found", "status": 0}), 404
+        
+        # Check if worker is in any project allocation (with worker/team_leader role)
+        from src.models.project_allocation_model import ProjectAllocation
+        allocations = ProjectAllocation.query.all()
+        in_allocation = False
+        for alloc in allocations:
+            if alloc.members:
+                for member in alloc.members:
+                    if member.get("user_id") == worker_id and member.get("role") in ["worker", "team_leader"]:
+                        in_allocation = True
+                        break
+            if in_allocation:
+                break
+        
+        # Check if worker is in any task (with worker role only for task table)
+        from src.models.task_model import Task
+        tasks = Task.query.all()
+        in_task = False
+        for task in tasks:
+            task_members = task.worker_ids if task.worker_ids else task.members
+            if task_members:
+                for member in task_members:
+                    member_role = member.get("role") or member.get("type")
+                    if member.get("user_id") == worker_id and member_role == "worker":
+                        in_task = True
+                        break
+            if in_task:
+                break
+        
+        if in_allocation or in_task:
+            return jsonify({
+                "msg": "Cannot delete this worker because they are allocated to projects or assigned to tasks", 
+                "status": 0
+            }), 400
             
         user = User.query.filter_by(role_id=worker.id).filter(User.role.in_(['team_leader', 'worker'])).first()
         if user:
             db.session.delete(user)
             
+        # Delete avatar image if exists
+        delete_image(worker.avatar_url)
+        
         db.session.delete(worker)
         db.session.commit()
         return jsonify({"message": "Worker deleted successfully", "status": 1}), 200

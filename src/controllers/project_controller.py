@@ -33,14 +33,14 @@ def create_project(decoded_payload=None):
         created_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
         created_by_role = decoded_payload.get("role") if decoded_payload else None
         
-        if not all([name, start_date_str, end_date_str]):
-            return jsonify({"msg": "Project name, start date, end date, and creator are required", "status": 0}), 400
+        if not all([name, start_date_str]):
+            return jsonify({"msg": "Project name and start date are required", "status": 0}), 400
 
         start_date = parse_date(start_date_str)
-        end_date = parse_date(end_date_str)
+        end_date = parse_date(end_date_str) if end_date_str else None
 
-        if not start_date or not end_date:
-            return jsonify({"msg": "Invalid date format", "status": 0}), 400
+        if not start_date:
+            return jsonify({"msg": "Invalid start date format", "status": 0}), 400
 
         new_project = Project(
             client_id=client_id,
@@ -114,7 +114,7 @@ def get_all_projects():
                 "group_name": project.group.name if project.group else None,
                 "description": project.description,
                 "start_date": project.start_date.isoformat(),
-                "end_date": project.end_date.isoformat(),
+                "end_date": project.end_date.isoformat() if project.end_date else None,
                 "status": project.status,
                 "project_logo": project.project_logo,
                 "remark": project.remark,
@@ -146,7 +146,7 @@ def get_project_by_id(project_id):
             "name": project.name,
             "description": project.description,
             "start_date": project.start_date.isoformat(),
-            "end_date": project.end_date.isoformat(),
+            "end_date": project.end_date.isoformat() if project.end_date else None,
             "status": project.status,
             "project_logo": project.project_logo,
             "remark": project.remark,
@@ -207,11 +207,18 @@ def delete_project(project_id):
     try:
         project = Project.query.get(project_id)
         if not project:
-            return jsonify({"message": "Project not found", "status": 0}), 404
+            return jsonify({"msg": "Project not found", "status": 0}), 404
             
+        # First delete all project allocations for this project
+        allocations = ProjectAllocation.query.filter_by(project_id=project_id).all()
+        for alloc in allocations:
+            db.session.delete(alloc)
+            
+        # Then delete the project
         db.session.delete(project)
         db.session.commit()
-        return jsonify({"message": "Project deleted successfully", "status": 1}), 200
+        return jsonify({"msg": "Project deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        print(f"Error deleting project: {str(e)}")
+        return jsonify({"success": 0, "msg": "Failed to delete project. Please try again later.", "status": 0}), 500

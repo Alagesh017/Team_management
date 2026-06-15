@@ -109,7 +109,8 @@ def delete_project_group(group_id):
         return jsonify({"msg": "Project group deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        print(f"Error deleting project group: {str(e)}")
+        return jsonify({"success": 0, "msg": "Failed to delete project group. Please try again later.", "status": 0}), 500
 
 def add_projects_to_group(group_id):
     try:
