@@ -1,4 +1,4 @@
-from flask import request, jsonify, current_app
+from flask import request, jsonify, current_app, g
 import jwt
 import datetime
 import bcrypt
@@ -51,6 +51,7 @@ def token_required(f):
         if not decoded_payload:
             return jsonify({"error": "Invalid or expired token"}), 401
 
-        return f(decoded_payload, *args, **kwargs)
+        g.current_user = decoded_payload
+        return f(*args, **kwargs)
 
     return decorated
