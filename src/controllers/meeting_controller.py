@@ -56,7 +56,7 @@ def create_meeting(decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_meetings():
+def get_all_meetings(decoded_payload=None):
     try:
         meetings = Meeting.query.all()
         result = []
@@ -86,7 +86,7 @@ def get_all_meetings():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_meeting_by_id(meeting_id):
+def get_meeting_by_id(meeting_id, decoded_payload=None):
     try:
         meeting = Meeting.query.get(meeting_id)
         if not meeting:
@@ -117,7 +117,7 @@ def get_meeting_by_id(meeting_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_meeting(meeting_id):
+def update_meeting(meeting_id, decoded_payload=None):
     try:
         meeting = Meeting.query.get(meeting_id)
         if not meeting:
@@ -153,7 +153,7 @@ def update_meeting(meeting_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_meeting(meeting_id):
+def delete_meeting(meeting_id, decoded_payload=None):
     try:
         meeting = Meeting.query.get(meeting_id)
         if not meeting:

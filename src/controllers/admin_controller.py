@@ -7,7 +7,7 @@ from src.models.user_model import User
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image, delete_image
 
-def create_admin():
+def create_admin(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -100,7 +100,7 @@ def create_admin():
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_admins():
+def get_all_admins(decoded_payload=None):
     try:
         admins = Admin.query.all()
         result = []
@@ -138,7 +138,7 @@ def get_all_admins():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_admin_by_id(admin_id):
+def get_admin_by_id(admin_id, decoded_payload=None):
     try:
         admin = db.session.get(Admin, admin_id)
         if not admin:
@@ -177,7 +177,7 @@ def get_admin_by_id(admin_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_admin(admin_id):
+def update_admin(admin_id, decoded_payload=None):
     try:
         admin = db.session.get(Admin, admin_id)
         if not admin:
@@ -288,7 +288,7 @@ def update_admin(admin_id):
                 return jsonify({"msg": "Email already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_admin(admin_id):
+def delete_admin(admin_id, decoded_payload=None):
     try:
         admin = Admin.query.get(admin_id)
         if not admin:

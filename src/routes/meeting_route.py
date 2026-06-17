@@ -18,19 +18,19 @@ def create_meeting_route(decoded_payload):
 @meeting_bp.route("/", methods=["GET"])
 @token_required
 def get_meetings_route(decoded_payload):
-    return get_all_meetings()
+    return get_all_meetings(decoded_payload)
 
 @meeting_bp.route("/<int:meeting_id>", methods=["GET"])
 @token_required
 def get_meeting_by_id_route(decoded_payload, meeting_id):
-    return get_meeting_by_id(meeting_id)
+    return get_meeting_by_id(meeting_id, decoded_payload)
 
 @meeting_bp.route("/<int:meeting_id>", methods=["PUT"])
 @token_required
 def update_meeting_route(decoded_payload, meeting_id):
-    return update_meeting(meeting_id)
+    return update_meeting(meeting_id, decoded_payload)
 
 @meeting_bp.route("/<int:meeting_id>", methods=["DELETE"])
 @token_required
 def delete_meeting_route(decoded_payload, meeting_id):
-    return delete_meeting(meeting_id)
+    return delete_meeting(meeting_id, decoded_payload)

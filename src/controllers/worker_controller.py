@@ -6,7 +6,7 @@ from src.models.user_model import User
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image, delete_image
 
-def create_worker():
+def create_worker(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -110,7 +110,7 @@ def create_worker():
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_workers():
+def get_all_workers(decoded_payload=None):
     try:
         workers = Worker.query.all()
         result = []
@@ -151,7 +151,7 @@ def get_all_workers():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_worker_by_id(worker_id):
+def get_worker_by_id(worker_id, decoded_payload=None):
     try:
         worker = Worker.query.get(worker_id)
         if not worker:
@@ -193,7 +193,7 @@ def get_worker_by_id(worker_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_worker(worker_id):
+def update_worker(worker_id, decoded_payload=None):
     try:
         worker = Worker.query.get(worker_id)
         if not worker:
@@ -309,7 +309,7 @@ def update_worker(worker_id):
                 return jsonify({"msg": "Email already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_worker(worker_id):
+def delete_worker(worker_id, decoded_payload=None):
     try:
         worker = Worker.query.get(worker_id)
         if not worker:

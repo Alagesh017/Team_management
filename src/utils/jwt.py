@@ -52,6 +52,6 @@ def token_required(f):
             return jsonify({"error": "Invalid or expired token"}), 401
 
         g.current_user = decoded_payload
-        return f(*args, **kwargs)
+        return f(decoded_payload, *args, **kwargs)
 
     return decorated

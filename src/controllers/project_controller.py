@@ -79,7 +79,7 @@ def create_project(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_projects():
+def get_all_projects(decoded_payload=None):
     try:
         role = request.args.get("role")
         role_id = request.args.get("role_id")
@@ -130,7 +130,7 @@ def get_all_projects():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_project_by_id(project_id):
+def get_project_by_id(project_id, decoded_payload=None):
     try:
         project = Project.query.get(project_id)
         if not project:
@@ -162,7 +162,7 @@ def get_project_by_id(project_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_project(project_id):
+def update_project(project_id, decoded_payload=None):
     try:
         project = Project.query.get(project_id)
         if not project:
@@ -203,7 +203,7 @@ def update_project(project_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_project(project_id):
+def delete_project(project_id, decoded_payload=None):
     try:
         project = Project.query.get(project_id)
         if not project:

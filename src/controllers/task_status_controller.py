@@ -58,7 +58,7 @@ def get_all_task_statuses():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_task_status_by_id(status_id):
+def get_task_status_by_id(status_id, decoded_payload=None):
     try:
         status = TaskStatus.query.get(status_id)
         if not status:
@@ -123,7 +123,7 @@ def delete_task_status(status_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def reorder_task_statuses():
+def reorder_task_statuses(decoded_payload=None):
     try:
         data = request.get_json()
         statuses_order = data.get("statuses", [])

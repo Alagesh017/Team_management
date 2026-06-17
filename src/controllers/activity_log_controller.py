@@ -37,7 +37,7 @@ def create_activity_log(role_id, role, table_name, record_id, action, old_data=N
         print(f"Error creating activity log: {e}")
         return False
 
-def get_all_activity_logs():
+def get_all_activity_logs(decoded_payload=None):
     try:
         logs = ActivityLog.query.order_by(ActivityLog.created_at.desc()).all()
         result = []
@@ -82,10 +82,10 @@ def get_logs_by_role(role_id, role):
         return jsonify({"success": 0, "error": str(e)}), 500
 
 # Backward compatibility
-def get_logs_by_user(user_id):
+def get_logs_by_user(user_id, decoded_payload=None):
     return get_logs_by_role(None, None)
 
-def get_logs_by_table(table_name):
+def get_logs_by_table(table_name, decoded_payload=None):
     try:
         logs = ActivityLog.query.filter_by(table_name=table_name).order_by(ActivityLog.created_at.desc()).all()
         result = []

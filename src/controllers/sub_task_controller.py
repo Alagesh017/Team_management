@@ -59,7 +59,7 @@ def create_sub_task(decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_sub_tasks_by_task_id(task_id):
+def get_sub_tasks_by_task_id(task_id, decoded_payload=None):
     try:
         sub_tasks = SubTask.query.filter_by(parent_task_id=task_id).all()
         result = []
@@ -198,7 +198,7 @@ def update_sub_task(sub_task_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_sub_task(sub_task_id):
+def delete_sub_task(sub_task_id, decoded_payload=None):
     try:
         st = SubTask.query.get(sub_task_id)
         if not st:

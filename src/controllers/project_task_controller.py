@@ -7,7 +7,7 @@ from src.models.admin_model import Admin
 from src.models.worker_model import Worker
 from src.utils.role_utils import get_person_details
 
-def get_project_task_data(project_id):
+def get_project_task_data(project_id, decoded_payload=None):
     try:
         print("=== Starting get_project_task_data ===")
         print("Project ID:", project_id)

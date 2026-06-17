@@ -131,7 +131,7 @@ def create_task(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_tasks_by_project(project_id):
+def get_tasks_by_project(project_id, decoded_payload=None):
     try:
         tasks = Task.query.filter_by(project_id=project_id).all()
         
@@ -189,7 +189,7 @@ def get_tasks_by_project(project_id):
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_tasks():
+def get_all_tasks(decoded_payload=None):
     try:
         tasks = Task.query.all()
         result = []
@@ -245,7 +245,7 @@ def get_all_tasks():
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_task_by_id(task_id):
+def get_task_by_id(task_id, decoded_payload=None):
     try:
         task = Task.query.get(task_id)
         if not task:
@@ -363,7 +363,7 @@ def delete_task(task_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_dashboard_tasks():
+def get_dashboard_tasks(decoded_payload=None):
     try:
         # Fetch all project groups
         groups = ProjectGroup.query.all()

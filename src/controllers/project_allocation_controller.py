@@ -47,7 +47,7 @@ def create_allocation(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_allocations():
+def get_all_allocations(decoded_payload=None):
     try:
         allocations = ProjectAllocation.query.all()
         result = []
@@ -85,7 +85,7 @@ def get_all_allocations():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_allocation_by_project_id(project_id):
+def get_allocation_by_project_id(project_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.filter_by(project_id=project_id).first()
         if not alloc:
@@ -176,7 +176,7 @@ def get_allocation_by_id(allocation_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_allocation(allocation_id):
+def update_allocation(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
         if not alloc:
@@ -203,7 +203,7 @@ def update_allocation(allocation_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_allocation_members(allocation_id):
+def update_allocation_members(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
         if not alloc:
@@ -224,7 +224,7 @@ def update_allocation_members(allocation_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_allocation(allocation_id):
+def delete_allocation(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
         if not alloc:

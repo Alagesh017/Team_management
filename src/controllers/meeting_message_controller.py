@@ -40,7 +40,7 @@ def create_message(decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_messages_by_meeting(meeting_id):
+def get_messages_by_meeting(meeting_id, decoded_payload=None):
     try:
         messages = MeetingMessage.query.filter_by(meeting_id=meeting_id).all()
         result = []
@@ -64,7 +64,7 @@ def get_messages_by_meeting(meeting_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_message_by_id(message_id):
+def get_message_by_id(message_id, decoded_payload=None):
     try:
         msg = MeetingMessage.query.get(message_id)
         if not msg:

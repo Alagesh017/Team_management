@@ -3,7 +3,7 @@ from src import db
 from src.models.project_group_model import ProjectGroup
 from src.models.project_model import Project
 
-def create_project_group():
+def create_project_group(decoded_payload=None):
     try:
         data = request.get_json()
         name = data.get("name")
@@ -33,7 +33,7 @@ def create_project_group():
                 return jsonify({"msg": "Project group name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_project_groups():
+def get_all_project_groups(decoded_payload=None):
     try:
         groups = ProjectGroup.query.all()
         result = []
@@ -49,7 +49,7 @@ def get_all_project_groups():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_project_group_by_id(group_id):
+def get_project_group_by_id(group_id, decoded_payload=None):
     try:
         group = ProjectGroup.query.get(group_id)
         if not group:
@@ -74,7 +74,7 @@ def get_project_group_by_id(group_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_project_group(group_id):
+def update_project_group(group_id, decoded_payload=None):
     try:
         group = ProjectGroup.query.get(group_id)
         if not group:
@@ -102,7 +102,7 @@ def update_project_group(group_id):
                 return jsonify({"msg": "Project group name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_project_group(group_id):
+def delete_project_group(group_id, decoded_payload=None):
     try:
         group = ProjectGroup.query.get(group_id)
         if not group:
@@ -120,7 +120,7 @@ def delete_project_group(group_id):
         print(f"Error deleting project group: {str(e)}")
         return jsonify({"success": 0, "msg": "Failed to delete project group. Please try again later.", "status": 0}), 500
 
-def add_projects_to_group(group_id):
+def add_projects_to_group(group_id, decoded_payload=None):
     try:
         group = ProjectGroup.query.get(group_id)
         if not group:

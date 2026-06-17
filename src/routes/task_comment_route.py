@@ -18,12 +18,12 @@ def create_comment_route(decoded_payload):
 @task_comment_bp.route("/task/<int:task_id>", methods=["GET"])
 @token_required
 def get_comments_by_task_route(decoded_payload, task_id):
-    return get_comments_by_task(task_id)
+    return get_comments_by_task(task_id, decoded_payload)
 
 @task_comment_bp.route("/<int:comment_id>", methods=["GET"])
 @token_required
 def get_comment_by_id_route(decoded_payload, comment_id):
-    return get_comment_by_id(comment_id)
+    return get_comment_by_id(comment_id, decoded_payload)
 
 @task_comment_bp.route("/<int:comment_id>", methods=["PUT"])
 @token_required

@@ -14,35 +14,35 @@ task_bp = Blueprint("task", __name__, url_prefix="/api/v1/tasks")
 
 @task_bp.route("/", methods=["POST"])
 @token_required
-def create_task_route():
-    return create_task()
+def create_task_route(decoded_payload):
+    return create_task(decoded_payload)
 
 @task_bp.route("/", methods=["GET"])
 @token_required
-def get_tasks_route():
-    return get_all_tasks()
+def get_tasks_route(decoded_payload):
+    return get_all_tasks(decoded_payload)
 
 @task_bp.route("/project/<int:project_id>", methods=["GET"])
 @token_required
-def get_tasks_by_project_route(project_id):
-    return get_tasks_by_project(project_id)
+def get_tasks_by_project_route(decoded_payload, project_id):
+    return get_tasks_by_project(project_id, decoded_payload)
 
 @task_bp.route("/<int:task_id>", methods=["GET"])
 @token_required
-def get_task_by_id_route(task_id):
-    return get_task_by_id(task_id)
+def get_task_by_id_route(decoded_payload, task_id):
+    return get_task_by_id(task_id, decoded_payload)
 
 @task_bp.route("/<int:task_id>", methods=["PUT"])
 @token_required
-def update_task_route(task_id):
-    return update_task(task_id)
+def update_task_route(decoded_payload, task_id):
+    return update_task(task_id, decoded_payload)
 
 @task_bp.route("/<int:task_id>", methods=["DELETE"])
 @token_required
-def delete_task_route(task_id):
-    return delete_task(task_id)
+def delete_task_route(decoded_payload, task_id):
+    return delete_task(task_id, decoded_payload)
 
 @task_bp.route("/dashboard", methods=["GET"])
 @token_required
-def get_dashboard_tasks_route():
-    return get_dashboard_tasks()
+def get_dashboard_tasks_route(decoded_payload):
+    return get_dashboard_tasks(decoded_payload)

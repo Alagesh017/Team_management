@@ -2,7 +2,7 @@ from flask import jsonify, request
 from src import db
 from src.models.client_model import Client
 
-def create_client():
+def create_client(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -32,7 +32,7 @@ def create_client():
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_clients():
+def get_all_clients(decoded_payload=None):
     try:
         clients = Client.query.all()
         result = []
@@ -51,7 +51,7 @@ def get_all_clients():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_client_by_id(client_id):
+def get_client_by_id(client_id, decoded_payload=None):
     try:
         client = Client.query.get(client_id)
         if not client:
@@ -71,7 +71,7 @@ def get_client_by_id(client_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_client(client_id):
+def update_client(client_id, decoded_payload=None):
     try:
         client = Client.query.get(client_id)
         if not client:
@@ -98,7 +98,7 @@ def update_client(client_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_client(client_id):
+def delete_client(client_id, decoded_payload=None):
     try:
         client = Client.query.get(client_id)
         if not client:

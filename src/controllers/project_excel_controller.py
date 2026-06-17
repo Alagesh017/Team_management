@@ -5,7 +5,7 @@ from src.models.project_excel_model import ProjectExcel
 from src.utils.role_utils import get_person_details
 from src.utils.image_utils import save_file
 
-def create_project_excel():
+def create_project_excel(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -45,7 +45,7 @@ def create_project_excel():
         print("Error creating excel:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_project_excels():
+def get_all_project_excels(decoded_payload=None):
     try:
         excel_files = ProjectExcel.query.all()
         result = []
@@ -62,7 +62,7 @@ def get_all_project_excels():
         print("Error getting all excels:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_excel_by_id(excel_id):
+def get_excel_by_id(excel_id, decoded_payload=None):
     try:
         excel = ProjectExcel.query.get(excel_id)
         if not excel:
@@ -80,7 +80,7 @@ def get_excel_by_id(excel_id):
         print("Error getting excel by id:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_excels_by_project_id(project_id):
+def get_excels_by_project_id(project_id, decoded_payload=None):
     try:
         excel_files = ProjectExcel.query.filter_by(project_id=project_id).all()
         result = []
@@ -97,7 +97,7 @@ def get_excels_by_project_id(project_id):
         print("Error getting excels by project id:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_project_excel(excel_id):
+def update_project_excel(excel_id, decoded_payload=None):
     try:
         excel = ProjectExcel.query.get(excel_id)
         if not excel:
@@ -114,7 +114,7 @@ def update_project_excel(excel_id):
         print("Error updating excel:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_project_excel(excel_id):
+def delete_project_excel(excel_id, decoded_payload=None):
     try:
         excel = ProjectExcel.query.get(excel_id)
         if not excel:

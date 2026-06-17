@@ -37,7 +37,7 @@ def create_attachment(decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_attachments():
+def get_all_attachments(decoded_payload=None):
     try:
         attachments = TaskAttachment.query.all()
         result = []
@@ -105,7 +105,7 @@ def update_attachment(attachment_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_attachment(attachment_id):
+def delete_attachment(attachment_id, decoded_payload=None):
     try:
         attachment = TaskAttachment.query.get(attachment_id)
         if not attachment:

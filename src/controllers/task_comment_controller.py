@@ -53,7 +53,7 @@ def get_comments_by_task(task_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_comment_by_id(comment_id):
+def get_comment_by_id(comment_id, decoded_payload=None):
     try:
         c = TaskComment.query.get(comment_id)
         if not c:
