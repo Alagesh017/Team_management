@@ -4,7 +4,7 @@ from src import db
 from src.models.task_comment_model import TaskComment
 from src.utils.role_utils import get_person_details
 
-def create_comment(decoded_payload):
+def create_comment(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -12,8 +12,8 @@ def create_comment(decoded_payload):
         comment = data.get("comment")
         remark = data.get("remark")
         
-        role_id = decoded_payload.get("role_id")
-        role = decoded_payload.get("role")
+        role_id = decoded_payload.get("role_id") if decoded_payload else None
+        role = decoded_payload.get("role") if decoded_payload else None
 
         if not task_id or not comment:
             return jsonify({"msg": "Task ID and comment are required", "status": 0}), 400
@@ -33,7 +33,7 @@ def create_comment(decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_comments_by_task(task_id):
+def get_comments_by_task(task_id, decoded_payload=None):
     try:
         comments = TaskComment.query.filter_by(task_id=task_id).order_by(TaskComment.created_at.desc()).all()
         result = []
@@ -74,7 +74,7 @@ def get_comment_by_id(comment_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_comment(comment_id, decoded_payload):
+def update_comment(comment_id, decoded_payload=None):
     try:
         c = TaskComment.query.get(comment_id)
         if not c:
@@ -93,7 +93,7 @@ def update_comment(comment_id, decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_comment(comment_id, decoded_payload):
+def delete_comment(comment_id, decoded_payload=None):
     try:
         c = TaskComment.query.get(comment_id)
         if not c:

@@ -4,7 +4,7 @@ from src import db
 from src.models.sub_task_model import SubTask
 from src.utils.role_utils import get_person_details
 
-def create_sub_task(decoded_payload):
+def create_sub_task(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -21,11 +21,11 @@ def create_sub_task(decoded_payload):
         actual_hours = data.get("actual_hours")
         remark = data.get("remark")
         
-        assigned_by_role_id = decoded_payload.get("role_id")
-        assigned_by_role = decoded_payload.get("role")
+        assigned_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
+        assigned_by_role = decoded_payload.get("role") if decoded_payload else None
 
-        if not all([parent_task_id, status_id, title, assigned_by_role_id, assigned_by_role]):
-            return jsonify({"msg": "Parent Task ID, Status ID, Title, and assigner are required", "status": 0}), 400
+        if not all([parent_task_id, status_id, title]):
+            return jsonify({"msg": "Parent Task ID, Status ID, and Title are required", "status": 0}), 400
         
 
         try:
@@ -92,7 +92,7 @@ def get_sub_tasks_by_task_id(task_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_sub_tasks():
+def get_all_sub_tasks(decoded_payload=None):
     try:
         sub_tasks = SubTask.query.all()
         result = []
@@ -125,7 +125,7 @@ def get_all_sub_tasks():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_sub_task_by_id(sub_task_id):
+def get_sub_task_by_id(sub_task_id, decoded_payload=None):
     try:
         st = SubTask.query.get(sub_task_id)
         if not st:
@@ -159,7 +159,7 @@ def get_sub_task_by_id(sub_task_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_sub_task(sub_task_id):
+def update_sub_task(sub_task_id, decoded_payload=None):
     try:
         st = SubTask.query.get(sub_task_id)
         if not st:

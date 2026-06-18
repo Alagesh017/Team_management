@@ -4,7 +4,7 @@ from src import db
 from src.models.meeting_model import Meeting
 from src.utils.role_utils import get_person_details
 
-def create_meeting(decoded_payload):
+def create_meeting(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -20,8 +20,8 @@ def create_meeting(decoded_payload):
         status = data.get("status", "scheduled")
         remark = data.get("remark")
         
-        created_by_role_id = decoded_payload.get("role_id")
-        created_by_role = decoded_payload.get("role")
+        created_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
+        created_by_role = decoded_payload.get("role") if decoded_payload else None
 
         if not all([project_id, title, members, meeting_date_str, start_time_str]):
             return jsonify({"msg": "Project ID, Title, Members, Date, and Start Time are required", "status": 0}), 400

@@ -134,7 +134,7 @@ def get_allocation_by_project_id(project_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_allocation_by_id(allocation_id):
+def get_allocation_by_id(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
         if not alloc:

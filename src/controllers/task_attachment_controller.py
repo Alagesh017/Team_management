@@ -4,7 +4,7 @@ from src import db
 from src.models.task_attachment_model import TaskAttachment
 from src.utils.role_utils import get_person_details
 
-def create_attachment(decoded_payload):
+def create_attachment(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -14,8 +14,8 @@ def create_attachment(decoded_payload):
         file_size = data.get("file_size")
         remark = data.get("remark")
         
-        role_id = decoded_payload.get("role_id")
-        role = decoded_payload.get("role")
+        role_id = decoded_payload.get("role_id") if decoded_payload else None
+        role = decoded_payload.get("role") if decoded_payload else None
 
         if not all([task_id, file_name, file_url]):
             return jsonify({"msg": "Task ID, File Name, and File URL are required", "status": 0}), 400
@@ -61,7 +61,7 @@ def get_all_attachments(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_attachment_by_id(attachment_id):
+def get_attachment_by_id(attachment_id, decoded_payload=None):
     try:
         attachment = TaskAttachment.query.get(attachment_id)
         if not attachment:
@@ -86,7 +86,7 @@ def get_attachment_by_id(attachment_id):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_attachment(attachment_id):
+def update_attachment(attachment_id, decoded_payload=None):
     try:
         attachment = TaskAttachment.query.get(attachment_id)
         if not attachment:

@@ -301,7 +301,7 @@ def get_task_by_id(task_id, decoded_payload=None):
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_task(task_id):
+def update_task(task_id, decoded_payload=None):
     try:
         task = Task.query.get(task_id)
         if not task:
@@ -346,7 +346,7 @@ def update_task(task_id):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_task(task_id):
+def delete_task(task_id, decoded_payload=None):
     try:
         task = Task.query.get(task_id)
         if not task:

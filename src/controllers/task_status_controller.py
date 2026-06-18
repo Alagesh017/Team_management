@@ -2,7 +2,7 @@ from flask import jsonify, request
 from src import db
 from src.models.task_status_model import TaskStatus
 
-def create_task_status():
+def create_task_status(decoded_payload=None):
     try:
         data = request.get_json()
         
@@ -40,7 +40,7 @@ def create_task_status():
                 return jsonify({"msg": "Status name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def get_all_task_statuses():
+def get_all_task_statuses(decoded_payload=None):
     try:
         statuses = TaskStatus.query.order_by(TaskStatus.sort_order.asc()).all()
         result = []
@@ -77,7 +77,7 @@ def get_task_status_by_id(status_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def update_task_status(status_id):
+def update_task_status(status_id, decoded_payload=None):
     try:
         status = TaskStatus.query.get(status_id)
         if not status:
@@ -110,7 +110,7 @@ def update_task_status(status_id):
                 return jsonify({"msg": "Status name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
-def delete_task_status(status_id):
+def delete_task_status(status_id, decoded_payload=None):
     try:
         status = TaskStatus.query.get(status_id)
         if not status:
