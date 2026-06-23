@@ -6,7 +6,9 @@ from src.models.admin_model import Admin
 from src.models.user_model import User
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image, delete_image
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_admin(decoded_payload=None):
     try:
         data = request.get_json()
@@ -100,6 +102,7 @@ def create_admin(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_admins(decoded_payload=None):
     try:
         admins = Admin.query.all()
@@ -138,6 +141,7 @@ def get_all_admins(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_admin_by_id(admin_id, decoded_payload=None):
     try:
         admin = db.session.get(Admin, admin_id)
@@ -177,6 +181,7 @@ def get_admin_by_id(admin_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_admin(admin_id, decoded_payload=None):
     try:
         admin = db.session.get(Admin, admin_id)
@@ -288,6 +293,7 @@ def update_admin(admin_id, decoded_payload=None):
                 return jsonify({"msg": "Email already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_admin(admin_id, decoded_payload=None):
     try:
         admin = Admin.query.get(admin_id)

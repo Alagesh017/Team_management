@@ -6,7 +6,9 @@ from src.models.project_model import Project
 from src.models.project_group_model import ProjectGroup
 from src.utils.date_utils import parse_date
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_task(decoded_payload=None):
     try:
         data = request.get_json()
@@ -131,6 +133,7 @@ def create_task(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_tasks_by_project(project_id, decoded_payload=None):
     try:
         tasks = Task.query.filter_by(project_id=project_id).all()
@@ -189,6 +192,7 @@ def get_tasks_by_project(project_id, decoded_payload=None):
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_tasks(decoded_payload=None):
     try:
         tasks = Task.query.all()
@@ -245,6 +249,7 @@ def get_all_tasks(decoded_payload=None):
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_task_by_id(task_id, decoded_payload=None):
     try:
         task = Task.query.get(task_id)
@@ -301,6 +306,7 @@ def get_task_by_id(task_id, decoded_payload=None):
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_task(task_id, decoded_payload=None):
     try:
         task = Task.query.get(task_id)
@@ -346,6 +352,7 @@ def update_task(task_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_task(task_id, decoded_payload=None):
     try:
         task = Task.query.get(task_id)
@@ -363,6 +370,7 @@ def delete_task(task_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_dashboard_tasks(decoded_payload=None):
     try:
         # Fetch all project groups

@@ -3,7 +3,9 @@ import datetime
 from src import db
 from src.models.meeting_model import Meeting
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_meeting(decoded_payload=None):
     try:
         data = request.get_json()
@@ -56,6 +58,7 @@ def create_meeting(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_meetings(decoded_payload=None):
     try:
         meetings = Meeting.query.all()
@@ -86,6 +89,7 @@ def get_all_meetings(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_meeting_by_id(meeting_id, decoded_payload=None):
     try:
         meeting = Meeting.query.get(meeting_id)
@@ -117,6 +121,7 @@ def get_meeting_by_id(meeting_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_meeting(meeting_id, decoded_payload=None):
     try:
         meeting = Meeting.query.get(meeting_id)
@@ -153,6 +158,7 @@ def update_meeting(meeting_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_meeting(meeting_id, decoded_payload=None):
     try:
         meeting = Meeting.query.get(meeting_id)

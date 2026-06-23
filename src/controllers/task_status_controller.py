@@ -1,7 +1,9 @@
 from flask import jsonify, request
 from src import db
 from src.models.task_status_model import TaskStatus
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_task_status(decoded_payload=None):
     try:
         data = request.get_json()
@@ -40,6 +42,7 @@ def create_task_status(decoded_payload=None):
                 return jsonify({"msg": "Status name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_task_statuses(decoded_payload=None):
     try:
         statuses = TaskStatus.query.order_by(TaskStatus.sort_order.asc()).all()
@@ -58,6 +61,7 @@ def get_all_task_statuses(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_task_status_by_id(status_id, decoded_payload=None):
     try:
         status = TaskStatus.query.get(status_id)
@@ -77,6 +81,7 @@ def get_task_status_by_id(status_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_task_status(status_id, decoded_payload=None):
     try:
         status = TaskStatus.query.get(status_id)
@@ -110,6 +115,7 @@ def update_task_status(status_id, decoded_payload=None):
                 return jsonify({"msg": "Status name already exists", "status": 0}), 409
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_task_status(status_id, decoded_payload=None):
     try:
         status = TaskStatus.query.get(status_id)
@@ -123,6 +129,7 @@ def delete_task_status(status_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def reorder_task_statuses(decoded_payload=None):
     try:
         data = request.get_json()

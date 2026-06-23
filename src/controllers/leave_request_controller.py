@@ -3,7 +3,9 @@ import datetime
 from src import db
 from src.models.leave_request_model import LeaveRequest
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_leave_request(decoded_payload):
     try:
         data = request.get_json()
@@ -48,6 +50,7 @@ def create_leave_request(decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_leave_requests():
     try:
         leaves = LeaveRequest.query.all()
@@ -79,6 +82,7 @@ def get_all_leave_requests():
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_my_leave_requests(decoded_payload):
     try:
         role_id = decoded_payload.get("role_id")
@@ -102,6 +106,7 @@ def get_my_leave_requests(decoded_payload):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def review_leave_request(leave_id, decoded_payload):
     try:
         leave = LeaveRequest.query.get(leave_id)
@@ -127,6 +132,7 @@ def review_leave_request(leave_id, decoded_payload):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_leave_request(leave_id, decoded_payload):
     try:
         leave = LeaveRequest.query.get(leave_id)

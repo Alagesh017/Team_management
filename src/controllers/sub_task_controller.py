@@ -3,7 +3,9 @@ import datetime
 from src import db
 from src.models.sub_task_model import SubTask
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_sub_task(decoded_payload=None):
     try:
         data = request.get_json()
@@ -59,6 +61,7 @@ def create_sub_task(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_sub_tasks_by_task_id(task_id, decoded_payload=None):
     try:
         sub_tasks = SubTask.query.filter_by(parent_task_id=task_id).all()
@@ -92,6 +95,7 @@ def get_sub_tasks_by_task_id(task_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_sub_tasks(decoded_payload=None):
     try:
         sub_tasks = SubTask.query.all()
@@ -125,6 +129,7 @@ def get_all_sub_tasks(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_sub_task_by_id(sub_task_id, decoded_payload=None):
     try:
         st = SubTask.query.get(sub_task_id)
@@ -159,6 +164,7 @@ def get_sub_task_by_id(sub_task_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_sub_task(sub_task_id, decoded_payload=None):
     try:
         st = SubTask.query.get(sub_task_id)
@@ -198,6 +204,7 @@ def update_sub_task(sub_task_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_sub_task(sub_task_id, decoded_payload=None):
     try:
         st = SubTask.query.get(sub_task_id)

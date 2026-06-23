@@ -10,7 +10,9 @@ from src.models.admin_model import Admin
 from src.models.worker_model import Worker
 from src.utils.jwt import decode_jwt_token, generate_jwt_token
 from src.utils.image_utils import save_image
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def register_controller():
     try:
         data = request.get_json()
@@ -83,6 +85,7 @@ def register_controller():
         return jsonify({"success": 0, "error": str(e)}), 500
 
 
+@db_retry(max_retries=3)
 def login_controller():
     try:
         data = request.get_json()
@@ -133,6 +136,7 @@ def login_controller():
         return jsonify({"success": 0, "error": str(e)}), 500
 
 
+@db_retry(max_retries=3)
 def google_login_controller():
     try:
         data = request.get_json()
@@ -178,6 +182,7 @@ def google_login_controller():
         return jsonify({"success": 0, "error": str(e)}), 500
 
 
+@db_retry(max_retries=3)
 def microsoft_login_controller():
     try:
         data = request.get_json()
@@ -224,6 +229,7 @@ def microsoft_login_controller():
         return jsonify({"success": 0, "error": str(e)}), 500
 
 
+@db_retry(max_retries=3)
 def token_refresh_controller():
     try:
         refresh_token = request.headers.get("Authorization")

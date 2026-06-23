@@ -4,7 +4,9 @@ from src import db
 from src.models.project_excel_model import ProjectExcel
 from src.utils.role_utils import get_person_details
 from src.utils.image_utils import save_file
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_project_excel(decoded_payload=None):
     try:
         data = request.get_json()
@@ -45,6 +47,7 @@ def create_project_excel(decoded_payload=None):
         print("Error creating excel:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_project_excels(decoded_payload=None):
     try:
         excel_files = ProjectExcel.query.all()
@@ -62,6 +65,7 @@ def get_all_project_excels(decoded_payload=None):
         print("Error getting all excels:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_excel_by_id(excel_id, decoded_payload=None):
     try:
         excel = ProjectExcel.query.get(excel_id)
@@ -80,6 +84,7 @@ def get_excel_by_id(excel_id, decoded_payload=None):
         print("Error getting excel by id:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_excels_by_project_id(project_id, decoded_payload=None):
     try:
         excel_files = ProjectExcel.query.filter_by(project_id=project_id).all()
@@ -97,6 +102,7 @@ def get_excels_by_project_id(project_id, decoded_payload=None):
         print("Error getting excels by project id:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_project_excel(excel_id, decoded_payload=None):
     try:
         excel = ProjectExcel.query.get(excel_id)
@@ -114,6 +120,7 @@ def update_project_excel(excel_id, decoded_payload=None):
         print("Error updating excel:", str(e))
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_project_excel(excel_id, decoded_payload=None):
     try:
         excel = ProjectExcel.query.get(excel_id)

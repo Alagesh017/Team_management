@@ -6,7 +6,9 @@ from src.models.project_allocation_model import ProjectAllocation
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_project(decoded_payload=None):
     try:
         data = request.get_json()
@@ -79,6 +81,7 @@ def create_project(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_projects(decoded_payload=None):
     try:
         role = request.args.get("role")
@@ -130,6 +133,7 @@ def get_all_projects(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_project_by_id(project_id, decoded_payload=None):
     try:
         project = Project.query.get(project_id)
@@ -162,6 +166,7 @@ def get_project_by_id(project_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_project(project_id, decoded_payload=None):
     try:
         project = Project.query.get(project_id)
@@ -203,18 +208,48 @@ def update_project(project_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_project(project_id, decoded_payload=None):
     try:
         project = Project.query.get(project_id)
         if not project:
             return jsonify({"msg": "Project not found", "status": 0}), 404
-            
-        # First delete all project allocations for this project
+        
+        # Check all associated records
+        association_types = []
+        
+        # Check project allocations
         allocations = ProjectAllocation.query.filter_by(project_id=project_id).all()
-        for alloc in allocations:
-            db.session.delete(alloc)
+        if allocations:
+            association_types.append("Project Allocations")
+        
+        # Check project excel files
+        from src.models.project_excel_model import ProjectExcel
+        excels = ProjectExcel.query.filter_by(project_id=project_id).all()
+        if excels:
+            association_types.append("Excel Files")
+        
+        # Check tasks
+        from src.models.task_model import Task
+        tasks = Task.query.filter_by(project_id=project_id).all()
+        if tasks:
+            association_types.append("Tasks")
+        
+        # Check meetings
+        from src.models.meeting_model import Meeting
+        meetings = Meeting.query.filter_by(project_id=project_id).all()
+        if meetings:
+            association_types.append("Meetings")
+        
+        # If there are any associations, prevent deletion and return details
+        if association_types:
+            return jsonify({
+                "msg": "Cannot delete project. It is associated with the following items: " + ", ".join(association_types),
+                "status": 0,
+                "association_types": association_types
+            }), 400
             
-        # Then delete the project
+        # If no associations, proceed with deletion
         db.session.delete(project)
         db.session.commit()
         return jsonify({"msg": "Project deleted successfully", "status": 1}), 200

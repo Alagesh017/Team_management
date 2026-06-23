@@ -3,7 +3,9 @@ import datetime
 from src import db
 from src.models.project_allocation_model import ProjectAllocation
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_allocation(decoded_payload=None):
     try:
         data = request.get_json()
@@ -47,6 +49,13 @@ def create_allocation(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+def normalize_role_name(role_name):
+    """Convert role name to lowercase snake_case for consistency."""
+    if not role_name:
+        return None
+    return role_name.strip().lower().replace(" ", "_")
+
+@db_retry(max_retries=3)
 def get_all_allocations(decoded_payload=None):
     try:
         allocations = ProjectAllocation.query.all()
@@ -58,11 +67,14 @@ def get_all_allocations(decoded_payload=None):
             if alloc.members:
                 for member in alloc.members:
                     member_role = member.get("role")
-                    member_role_id = member.get("role_id")
-                    if member_role and member_role_id:
-                        member_details = get_person_details(member_role, member_role_id)
+                    member_user_id = member.get("user_id")
+                    if member_role and member_user_id:
+                        normalized_role = normalize_role_name(member_role)
+                        member_details = get_person_details(normalized_role, member_user_id)
                         if member_details:
-                            enriched_members.append(member_details)
+                            # Merge member details with original member to preserve client_contact, parent_id, etc.
+                            merged_member = {**member_details, **member}
+                            enriched_members.append(merged_member)
                         else:
                             enriched_members.append(member)
                     else:
@@ -83,8 +95,10 @@ def get_all_allocations(decoded_payload=None):
             })
         return jsonify({"allocations": result, "status": 1}), 200
     except Exception as e:
+        print(f"Error in get_all_allocations: {str(e)}")
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_allocation_by_project_id(project_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.filter_by(project_id=project_id).first()
@@ -104,11 +118,12 @@ def get_allocation_by_project_id(project_id, decoded_payload=None):
         if alloc.members:
             for member in alloc.members:
                 member_role = member.get("role")
-                member_role_id = member.get("role_id")
-                if member_role and member_role_id:
-                    member_details = get_person_details(member_role, member_role_id)
+                member_user_id = member.get("user_id")
+                if member_role and member_user_id:
+                    normalized_role = normalize_role_name(member_role)
+                    member_details = get_person_details(normalized_role, member_user_id)
                     if member_details:
-                        # Merge member details with original member to preserve client_contact
+                        # Merge member details with original member to preserve client_contact, parent_id, etc.
                         merged_member = {**member_details, **member}
                         enriched_members.append(merged_member)
                     else:
@@ -132,8 +147,10 @@ def get_allocation_by_project_id(project_id, decoded_payload=None):
         }
         return jsonify({"allocation": result, "status": 1}), 200
     except Exception as e:
+        print(f"Error in get_allocation_by_project_id: {str(e)}")
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_allocation_by_id(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
@@ -146,11 +163,12 @@ def get_allocation_by_id(allocation_id, decoded_payload=None):
         if alloc.members:
             for member in alloc.members:
                 member_role = member.get("role")
-                member_role_id = member.get("role_id")
-                if member_role and member_role_id:
-                    member_details = get_person_details(member_role, member_role_id)
+                member_user_id = member.get("user_id")
+                if member_role and member_user_id:
+                    normalized_role = normalize_role_name(member_role)
+                    member_details = get_person_details(normalized_role, member_user_id)
                     if member_details:
-                        # Merge member details with original member to preserve client_contact
+                        # Merge member details with original member to preserve client_contact, parent_id, etc.
                         merged_member = {**member_details, **member}
                         enriched_members.append(merged_member)
                     else:
@@ -174,8 +192,10 @@ def get_allocation_by_id(allocation_id, decoded_payload=None):
         }
         return jsonify({"allocation": result, "status": 1}), 200
     except Exception as e:
+        print(f"Error in get_allocation_by_id: {str(e)}")
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_allocation(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
@@ -203,6 +223,7 @@ def update_allocation(allocation_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_allocation_members(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)
@@ -224,6 +245,7 @@ def update_allocation_members(allocation_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_allocation(allocation_id, decoded_payload=None):
     try:
         alloc = ProjectAllocation.query.get(allocation_id)

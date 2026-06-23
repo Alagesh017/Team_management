@@ -3,7 +3,9 @@ import datetime
 from src import db
 from src.models.task_attachment_model import TaskAttachment
 from src.utils.role_utils import get_person_details
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def create_attachment(decoded_payload=None):
     try:
         data = request.get_json()
@@ -37,6 +39,7 @@ def create_attachment(decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_all_attachments(decoded_payload=None):
     try:
         attachments = TaskAttachment.query.all()
@@ -61,6 +64,7 @@ def get_all_attachments(decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def get_attachment_by_id(attachment_id, decoded_payload=None):
     try:
         attachment = TaskAttachment.query.get(attachment_id)
@@ -86,6 +90,7 @@ def get_attachment_by_id(attachment_id, decoded_payload=None):
     except Exception as e:
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def update_attachment(attachment_id, decoded_payload=None):
     try:
         attachment = TaskAttachment.query.get(attachment_id)
@@ -105,6 +110,7 @@ def update_attachment(attachment_id, decoded_payload=None):
         db.session.rollback()
         return jsonify({"success": 0, "error": str(e)}), 500
 
+@db_retry(max_retries=3)
 def delete_attachment(attachment_id, decoded_payload=None):
     try:
         attachment = TaskAttachment.query.get(attachment_id)

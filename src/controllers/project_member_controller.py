@@ -3,7 +3,9 @@ from src import db
 from src.models.project_allocation_model import ProjectAllocation
 from src.models.admin_model import Admin
 from src.models.worker_model import Worker
+from src.utils.db_retry import db_retry
 
+@db_retry(max_retries=3)
 def get_project_members(project_id, decoded_payload=None):
     try:
         allocation = ProjectAllocation.query.filter_by(project_id=project_id).first()
