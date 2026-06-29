@@ -6,6 +6,7 @@ from src.controllers.task_status_controller import (
     update_task_status,
     delete_task_status,
     reorder_task_statuses,
+    check_task_status_flag,
 )
 from src.utils.jwt import token_required
 
@@ -25,6 +26,11 @@ def get_task_statuses_route(decoded_payload):
 @token_required
 def reorder_task_statuses_route(decoded_payload):
     return reorder_task_statuses(decoded_payload)
+
+@task_status_bp.route("/check-flag", methods=["POST"])
+@token_required
+def check_task_status_flag_route(decoded_payload):
+    return check_task_status_flag(decoded_payload)
 
 @task_status_bp.route("/<int:status_id>", methods=["GET"])
 @token_required

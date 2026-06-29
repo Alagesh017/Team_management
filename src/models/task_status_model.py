@@ -10,6 +10,10 @@ class TaskStatus(db.Model):
     sort_order = db.Column(db.Integer, default=0)
     remark = db.Column(db.Text, nullable=True)
     is_confidential = db.Column(db.Boolean, default=False)
+    is_backlog = db.Column(db.Boolean, default=False)
+    is_todo = db.Column(db.Boolean, default=False)
+    is_in_progress = db.Column(db.Boolean, default=False)
+    is_completed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     

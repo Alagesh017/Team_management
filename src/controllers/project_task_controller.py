@@ -9,10 +9,11 @@ from src.utils.role_utils import get_person_details
 from src.utils.db_retry import db_retry
 
 @db_retry(max_retries=3)
-def get_project_task_data(project_id, decoded_payload=None):
+def get_project_task_data(project_id, sprint_id=None, decoded_payload=None):
     try:
         print("=== Starting get_project_task_data ===")
         print("Project ID:", project_id)
+        print("Sprint ID:", sprint_id)
         
         allocation = ProjectAllocation.query.filter_by(project_id=project_id).first()
         print("Allocation found:", allocation)
@@ -101,7 +102,12 @@ def get_project_task_data(project_id, decoded_payload=None):
         
         statuses = TaskStatus.query.order_by(TaskStatus.sort_order).all()
         
-        tasks = Task.query.filter_by(project_id=project_id).all()
+        query = Task.query.filter_by(project_id=project_id)
+        if sprint_id:
+            query = query.filter_by(sprint_id=sprint_id)
+        tasks = query.all()
+        
+        status_map = {status.id: status for status in statuses}
         
         tasks_with_workers = []
         for task in tasks:
@@ -112,11 +118,15 @@ def get_project_task_data(project_id, decoded_payload=None):
             elif hasattr(task, 'worker_ids') and task.worker_ids:
                 task_members = task.worker_ids
             
+            task_status = status_map.get(task.status_id)
+            
             task_data = {
                 "task_id": task.id,
                 "project_id": task.project_id,
                 "allocation_id": task.allocation_id,
                 "status_id": task.status_id,
+                "status_name": task_status.name if task_status else None,
+                "status_color": task_status.color if task_status else None,
                 "title": task.title,
                 "description": task.description,
                 "goal": task.goal,
@@ -224,6 +234,10 @@ def get_project_task_data(project_id, decoded_payload=None):
                 "sort_order": status.sort_order,
                 "remark": status.remark,
                 "is_confidential": status.is_confidential,
+                "is_backlog": status.is_backlog,
+                "is_todo": status.is_todo,
+                "is_in_progress": status.is_in_progress,
+                "is_completed": status.is_completed,
                 "tasks": status_tasks
             })
         

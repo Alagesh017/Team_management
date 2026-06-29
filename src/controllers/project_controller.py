@@ -3,6 +3,7 @@ import datetime
 from src import db
 from src.models.project_model import Project
 from src.models.project_allocation_model import ProjectAllocation
+from src.models.sprint_model import Sprint
 from src.utils.date_utils import parse_date
 from src.utils.image_utils import save_image
 from src.utils.role_utils import get_person_details
@@ -108,6 +109,31 @@ def get_all_projects(decoded_payload=None):
         result = []
         for project in projects:
             created_by_person = get_person_details(project.created_by_role, project.created_by_role_id)
+            # Get project sprints
+            project_sprints = Sprint.query.filter_by(project_id=project.id).order_by(Sprint.created_at.desc()).all()
+            sprints = []
+            for sprint in project_sprints:
+                # Get task count for the sprint
+                from src.models.task_model import Task
+                task_count = Task.query.filter_by(sprint_id=sprint.id).count()
+                
+                sprints.append({
+                    "id": sprint.id,
+                    "project_id": sprint.project_id,
+                    "sprint_name": sprint.sprint_name,
+                    "sprint_goal": sprint.sprint_goal,
+                    "description": sprint.description,
+                    "start_date": sprint.start_date.isoformat(),
+                    "end_date": sprint.end_date.isoformat() if sprint.end_date else None,
+                    "status": sprint.status,
+                    "is_active": sprint.is_active,
+                    "sprint_status": sprint.sprint_status,
+                    "task_count": task_count,
+                    "created_by": sprint.created_by,
+                    "updated_by": sprint.updated_by,
+                    "created_at": sprint.created_at,
+                    "updated_at": sprint.updated_at
+                })
             result.append({
                 "id": project.id,
                 "client_id": project.client_id,
@@ -127,7 +153,8 @@ def get_all_projects(decoded_payload=None):
                 "created_by_role_id": project.created_by_role_id,
                 "created_by_role": project.created_by_role,
                 "created_by_person": created_by_person,
-                "created_at": project.created_at
+                "created_at": project.created_at,
+                "sprints": sprints
             })
         return jsonify({"projects": result, "status": 1}), 200
     except Exception as e:
@@ -141,6 +168,31 @@ def get_project_by_id(project_id, decoded_payload=None):
             return jsonify({"message": "Project not found", "status": 0}), 404
         
         created_by_person = get_person_details(project.created_by_role, project.created_by_role_id)
+        # Get project sprints
+        project_sprints = Sprint.query.filter_by(project_id=project.id).order_by(Sprint.created_at.desc()).all()
+        sprints = []
+        for sprint in project_sprints:
+            # Get task count for the sprint
+            from src.models.task_model import Task
+            task_count = Task.query.filter_by(sprint_id=sprint.id).count()
+            
+            sprints.append({
+                "id": sprint.id,
+                "project_id": sprint.project_id,
+                "sprint_name": sprint.sprint_name,
+                "sprint_goal": sprint.sprint_goal,
+                "description": sprint.description,
+                "start_date": sprint.start_date.isoformat(),
+                "end_date": sprint.end_date.isoformat() if sprint.end_date else None,
+                "status": sprint.status,
+                "is_active": sprint.is_active,
+                "sprint_status": sprint.sprint_status,
+                "task_count": task_count,
+                "created_by": sprint.created_by,
+                "updated_by": sprint.updated_by,
+                "created_at": sprint.created_at,
+                "updated_at": sprint.updated_at
+            })
         result = {
             "id": project.id,
             "client_id": project.client_id,
@@ -160,7 +212,8 @@ def get_project_by_id(project_id, decoded_payload=None):
             "created_by_role_id": project.created_by_role_id,
             "created_by_role": project.created_by_role,
             "created_by_person": created_by_person,
-            "created_at": project.created_at
+            "created_at": project.created_at,
+            "sprints": sprints
         }
         return jsonify({"project": result, "status": 1}), 200
     except Exception as e:

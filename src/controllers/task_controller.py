@@ -2,6 +2,8 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.task_model import Task
+from src.models.task_status_model import TaskStatus
+from src.models.sprint_model import Sprint
 from src.models.project_model import Project
 from src.models.project_group_model import ProjectGroup
 from src.utils.date_utils import parse_date
@@ -15,6 +17,7 @@ def create_task(decoded_payload=None):
         print("create_task data:", data)
         
         project_id = data.get("project_id")
+        sprint_id = data.get("sprint_id")
         allocation_id = data.get("allocation_id")
         status_id = data.get("status_id")
         title = data.get("title")
@@ -81,6 +84,7 @@ def create_task(decoded_payload=None):
                 
                 new_task = Task(
                     project_id=project_id,
+                    sprint_id=sprint_id,
                     allocation_id=allocation_id,
                     status_id=status_id,
                     title=title,
@@ -105,6 +109,7 @@ def create_task(decoded_payload=None):
             # If no members, create single task
             new_task = Task(
                 project_id=project_id,
+                sprint_id=sprint_id,
                 allocation_id=allocation_id,
                 status_id=status_id,
                 title=title,
@@ -163,6 +168,8 @@ def get_tasks_by_project(project_id, decoded_payload=None):
                 "id": task.id,
                 "project_id": task.project_id,
                 "project_name": task.project.name if task.project else None,
+                "sprint_id": task.sprint_id,
+                "sprint_name": task.sprint.sprint_name if task.sprint else None,
                 "allocation_id": task.allocation_id,
                 "status_id": task.status_id,
                 "status_name": task.status.name if task.status else None,
@@ -189,6 +196,67 @@ def get_tasks_by_project(project_id, decoded_payload=None):
     except Exception as e:
         import traceback
         print(f"Error in get_tasks_by_project: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+@db_retry(max_retries=3)
+def get_tasks_by_sprint(sprint_id, decoded_payload=None):
+    try:
+        tasks = Task.query.filter_by(sprint_id=sprint_id).all()
+        
+        result = []
+        for task in tasks:
+            # Enrich members
+            enriched_members = []
+            # Use task.worker_ids if available, else task.members (backward compatibility)
+            task_members = task.worker_ids if task.worker_ids else task.members
+            if task_members:
+                for member in task_members:
+                    member_role = member.get("role")
+                    member_role_id = member.get("role_id")
+                    user_id = member.get("user_id")
+                    if member_role and member_role_id:
+                        member_details = get_person_details(member_role, member_role_id)
+                        if member_details:
+                            enriched_members.append(member_details)
+                        else:
+                            enriched_members.append(member)
+                    else:
+                        enriched_members.append(member)
+            
+            assigned_by_person = get_person_details(task.assigned_by_role, task.assigned_by_role_id)
+            task_data = {
+                "id": task.id,
+                "project_id": task.project_id,
+                "project_name": task.project.name if task.project else None,
+                "sprint_id": task.sprint_id,
+                "sprint_name": task.sprint.sprint_name if task.sprint else None,
+                "allocation_id": task.allocation_id,
+                "status_id": task.status_id,
+                "status_name": task.status.name if task.status else None,
+                "title": task.title,
+                "description": task.description,
+                "goal": task.goal,
+                "priority": task.priority,
+                "start_date": task.start_date.isoformat() if task.start_date else None,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "assigned_by_role_id": task.assigned_by_role_id,
+                "assigned_by_role": task.assigned_by_role,
+                "assigned_by_person": assigned_by_person,
+                "assigned_by": task.assigned_by, # Backward compatibility
+                "worker_ids": task.worker_ids, # Backward compatibility
+                "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
+                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "remark": task.remark,
+                "created_at": task.created_at,
+                "members": enriched_members
+            }
+            
+            result.append(task_data)
+        return jsonify({"tasks": result, "status": 1}), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_tasks_by_sprint: {str(e)}")
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500
 
@@ -221,6 +289,8 @@ def get_all_tasks(decoded_payload=None):
                 "id": task.id,
                 "project_id": task.project_id,
                 "project_name": task.project.name if task.project else None,
+                "sprint_id": task.sprint_id,
+                "sprint_name": task.sprint.sprint_name if task.sprint else None,
                 "allocation_id": task.allocation_id,
                 "status_id": task.status_id,
                 "status_name": task.status.name if task.status else None,
@@ -279,6 +349,8 @@ def get_task_by_id(task_id, decoded_payload=None):
             "id": task.id,
             "project_id": task.project_id,
             "project_name": task.project.name if task.project else None,
+            "sprint_id": task.sprint_id,
+            "sprint_name": task.sprint.sprint_name if task.sprint else None,
             "allocation_id": task.allocation_id,
             "status_id": task.status_id,
             "status_name": task.status.name if task.status else None,
@@ -317,6 +389,8 @@ def update_task(task_id, decoded_payload=None):
         
         if "project_id" in data:
             task.project_id = data["project_id"]
+        if "sprint_id" in data:
+            task.sprint_id = data["sprint_id"]
         if "allocation_id" in data:
             task.allocation_id = data["allocation_id"]
         if "status_id" in data:
@@ -479,6 +553,9 @@ def get_dashboard_tasks(decoded_payload=None):
                     task_data = {
                         "id": task.id,
                         "project_id": task.project_id,
+                        "project_name": task.project.name if task.project else None,
+                        "sprint_id": task.sprint_id,
+                        "sprint_name": task.sprint.sprint_name if task.sprint else None,
                         "allocation_id": task.allocation_id,
                         "status_id": task.status_id,
                         "status_name": task.status.name if task.status else None,
@@ -602,6 +679,9 @@ def get_dashboard_tasks(decoded_payload=None):
                     task_data = {
                         "id": task.id,
                         "project_id": task.project_id,
+                        "project_name": task.project.name if task.project else None,
+                        "sprint_id": task.sprint_id,
+                        "sprint_name": task.sprint.sprint_name if task.sprint else None,
                         "allocation_id": task.allocation_id,
                         "status_id": task.status_id,
                         "status_name": task.status.name if task.status else None,
@@ -632,5 +712,251 @@ def get_dashboard_tasks(decoded_payload=None):
     except Exception as e:
         import traceback
         print(f"Error in get_dashboard_tasks: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+
+@db_retry(max_retries=3)
+def get_project_backlog(project_id, decoded_payload=None):
+    try:
+        # 1. Find the backlog status and todo status
+        backlog_status = TaskStatus.query.filter_by(is_backlog=True).first()
+        todo_status = TaskStatus.query.filter_by(is_todo=True).first()
+        
+        # Get all statuses first for status_map
+        all_statuses = TaskStatus.query.order_by(TaskStatus.sort_order).all()
+        status_map = {status.id: status for status in all_statuses}
+        
+        # 2. Get all backlog tasks for the project: tasks with no sprint_id and backlog status
+        backlog_tasks_query = Task.query.filter_by(project_id=project_id, sprint_id=None, status_id=backlog_status.id)
+        backlog_tasks = backlog_tasks_query.all()
+        
+        # Enrich backlog tasks
+        enriched_backlog_tasks = []
+        for task in backlog_tasks:
+            # Enrich members
+            enriched_members = []
+            task_members = task.worker_ids if task.worker_ids else task.members
+            if task_members:
+                for member in task_members:
+                    member_role = member.get("role") or member.get("type")
+                    member_role_id = member.get("role_id")
+                    user_id = member.get("user_id")
+                    member_found = False
+                    if member_role and user_id:
+                        member_details = None
+                        if member_role in ["worker", "team_leader"]:
+                            from src.models.worker_model import Worker
+                            worker = Worker.query.get(user_id)
+                            if worker:
+                                member_details = {
+                                    "user_id": user_id,
+                                    "role": member_role,
+                                    "type": member_role,
+                                    "first_name": worker.first_name,
+                                    "last_name": worker.last_name,
+                                    "email": worker.email,
+                                    "avatar_url": worker.avatar_url
+                                }
+                        elif member_role in ["superadmin", "admin", "scrum"]:
+                            from src.models.admin_model import Admin
+                            admin = Admin.query.get(user_id)
+                            if admin:
+                                member_details = {
+                                    "user_id": user_id,
+                                    "role": member_role,
+                                    "type": member_role,
+                                    "first_name": admin.first_name,
+                                    "last_name": admin.last_name,
+                                    "email": admin.email,
+                                    "avatar_url": admin.avatar_url
+                                }
+                        if member_details:
+                            enriched_members.append(member_details)
+                            member_found = True
+                    if not member_found:
+                        if user_id and not member_role_id:
+                            from src.models.user_model import User
+                            user = User.query.get(user_id)
+                            if user:
+                                member_role = user.role
+                                member_role_id = user.role_id
+                        if member_role and member_role_id:
+                            member_details = get_person_details(member_role, member_role_id)
+                            if member_details:
+                                # Ensure user_id exists
+                                if "user_id" not in member_details:
+                                    member_details["user_id"] = member_details.get("role_id", user_id)
+                                enriched_members.append(member_details)
+                            else:
+                                enriched_members.append(member)
+                        else:
+                            enriched_members.append(member)
+            assigned_by_person = get_person_details(task.assigned_by_role, task.assigned_by_role_id)
+            task_status = status_map.get(task.status_id)
+            task_data = {
+                "id": task.id,
+                "task_id": task.id,
+                "project_id": task.project_id,
+                "project_name": task.project.name if task.project else None,
+                "sprint_id": task.sprint_id,
+                "sprint_name": task.sprint.sprint_name if task.sprint else None,
+                "allocation_id": task.allocation_id,
+                "status_id": task.status_id,
+                "status_name": task_status.name if task_status else None,
+                "status_color": task_status.color if task_status else None,
+                "title": task.title,
+                "description": task.description,
+                "goal": task.goal,
+                "priority": task.priority,
+                "start_date": task.start_date.isoformat() if task.start_date else None,
+                "due_date": task.due_date.isoformat() if task.due_date else None,
+                "assigned_by_role_id": task.assigned_by_role_id,
+                "assigned_by_role": task.assigned_by_role,
+                "assigned_by_person": assigned_by_person,
+                "assigned_by": task.assigned_by,
+                "worker_ids": task.worker_ids,
+                "assigned_workers": enriched_members,
+                "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
+                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "remark": task.remark,
+                "created_at": task.created_at.isoformat() if task.created_at else None,
+                "members": enriched_members
+            }
+            enriched_backlog_tasks.append(task_data)
+        
+        # 3. Get all sprints for the project, each with their tasks
+        sprints = Sprint.query.filter_by(project_id=project_id).order_by(Sprint.created_at.desc()).all()
+        enriched_sprints = []
+        for sprint in sprints:
+            # Get all tasks for this sprint
+            sprint_tasks = Task.query.filter_by(sprint_id=sprint.id).all()
+            # Enrich sprint tasks
+            enriched_sprint_tasks = []
+            for task in sprint_tasks:
+                task_members = task.worker_ids if task.worker_ids else task.members
+                enriched_members = []
+                if task_members:
+                    for member in task_members:
+                        member_role = member.get("role") or member.get("type")
+                        member_role_id = member.get("role_id")
+                        user_id = member.get("user_id")
+                        member_found = False
+                        if member_role and user_id:
+                            member_details = None
+                            if member_role in ["worker", "team_leader"]:
+                                from src.models.worker_model import Worker
+                                worker = Worker.query.get(user_id)
+                                if worker:
+                                    member_details = {
+                                        "user_id": user_id,
+                                        "role": member_role,
+                                        "type": member_role,
+                                        "first_name": worker.first_name,
+                                        "last_name": worker.last_name,
+                                        "email": worker.email,
+                                        "avatar_url": worker.avatar_url
+                                    }
+                            elif member_role in ["superadmin", "admin", "scrum"]:
+                                from src.models.admin_model import Admin
+                                admin = Admin.query.get(user_id)
+                                if admin:
+                                    member_details = {
+                                        "user_id": user_id,
+                                        "role": member_role,
+                                        "type": member_role,
+                                        "first_name": admin.first_name,
+                                        "last_name": admin.last_name,
+                                        "email": admin.email,
+                                        "avatar_url": admin.avatar_url
+                                    }
+                            if member_details:
+                                enriched_members.append(member_details)
+                                member_found = True
+                    if not member_found:
+                        if user_id and not member_role_id:
+                            from src.models.user_model import User
+                            user = User.query.get(user_id)
+                            if user:
+                                member_role = user.role
+                                member_role_id = user.role_id
+                        if member_role and member_role_id:
+                            member_details = get_person_details(member_role, member_role_id)
+                            if member_details:
+                                # Ensure user_id exists
+                                if "user_id" not in member_details:
+                                    member_details["user_id"] = member_details.get("role_id", user_id)
+                                enriched_members.append(member_details)
+                            else:
+                                enriched_members.append(member)
+                        else:
+                            enriched_members.append(member)
+                assigned_by_person = get_person_details(task.assigned_by_role, task.assigned_by_role_id)
+                task_status = status_map.get(task.status_id)
+                task_data = {
+                    "id": task.id,
+                    "task_id": task.id,
+                    "project_id": task.project_id,
+                    "sprint_id": task.sprint_id,
+                    "allocation_id": task.allocation_id,
+                    "status_id": task.status_id,
+                    "status_name": task_status.name if task_status else None,
+                    "status_color": task_status.color if task_status else None,
+                    "title": task.title,
+                    "description": task.description,
+                    "goal": task.goal,
+                    "priority": task.priority,
+                    "start_date": task.start_date.isoformat() if task.start_date else None,
+                    "due_date": task.due_date.isoformat() if task.due_date else None,
+                    "assigned_by_role_id": task.assigned_by_role_id,
+                    "assigned_by_role": task.assigned_by_role,
+                    "assigned_by_person": assigned_by_person,
+                    "assigned_by": task.assigned_by,
+                    "worker_ids": task.worker_ids,
+                    "assigned_workers": enriched_members,
+                    "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
+                    "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                    "remark": task.remark,
+                    "created_at": task.created_at.isoformat() if task.created_at else None,
+                    "members": enriched_members
+                }
+                enriched_sprint_tasks.append(task_data)
+            # Sprint data
+            sprint_data = {
+                "id": sprint.id,
+                "project_id": sprint.project_id,
+                "sprint_name": sprint.sprint_name,
+                "sprint_goal": sprint.sprint_goal,
+                "description": sprint.description,
+                "start_date": sprint.start_date.isoformat() if sprint.start_date else None,
+                "end_date": sprint.end_date.isoformat() if sprint.end_date else None,
+                "status": sprint.status,
+                "is_active": sprint.is_active,
+                "created_by": sprint.created_by,
+                "updated_by": sprint.updated_by,
+                "created_at": sprint.created_at.isoformat() if sprint.created_at else None,
+                "updated_at": sprint.updated_at.isoformat() if sprint.updated_at else None,
+                "tasks": enriched_sprint_tasks
+            }
+            enriched_sprints.append(sprint_data)
+        
+        return jsonify({
+            "status": 1,
+            "backlog_tasks": enriched_backlog_tasks,
+            "sprints": enriched_sprints,
+            "backlog_status": {
+                "id": backlog_status.id,
+                "name": backlog_status.name,
+                "color": backlog_status.color
+            } if backlog_status else None,
+            "todo_status": {
+                "id": todo_status.id,
+                "name": todo_status.name,
+                "color": todo_status.color
+            } if todo_status else None
+        }), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_project_backlog: {str(e)}")
         print(traceback.format_exc())
         return jsonify({"success": 0, "error": str(e)}), 500

@@ -6,6 +6,7 @@ class Task(db.Model):
     
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=False)
+    sprint_id = db.Column(db.Integer, db.ForeignKey('sprints.id'), nullable=True)
     allocation_id = db.Column(db.Integer, db.ForeignKey('project_allocations.id'), nullable=True)
     status_id = db.Column(db.Integer, db.ForeignKey('task_statuses.id'), nullable=False)
     title = db.Column(db.String(300), nullable=False)
@@ -27,6 +28,7 @@ class Task(db.Model):
     
     # Relationships
     project = db.relationship('Project', backref='tasks')
+    sprint = db.relationship('Sprint', backref='tasks')
     allocation = db.relationship('ProjectAllocation', backref='tasks')
     status = db.relationship('TaskStatus', backref='tasks')
     

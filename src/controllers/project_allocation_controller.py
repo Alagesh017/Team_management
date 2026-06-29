@@ -2,8 +2,26 @@ from flask import jsonify, request
 import datetime
 from src import db
 from src.models.project_allocation_model import ProjectAllocation
+from src.models.worker_model import Worker
+from src.models.admin_model import Admin
 from src.utils.role_utils import get_person_details
 from src.utils.db_retry import db_retry
+
+def sanitize_member(member):
+    """Only keep necessary fields for storage: role_id, parent_id, client_contact, and basic identification."""
+    sanitized = {}
+    if "role_id" in member:
+        sanitized["role_id"] = member["role_id"]
+    if "parent_id" in member:
+        sanitized["parent_id"] = member["parent_id"]
+    if "client_contact" in member:
+        sanitized["client_contact"] = bool(member["client_contact"])
+    # Also keep basic identification for reference
+    if "role" in member:
+        sanitized["role"] = member["role"]
+    if "user_id" in member:
+        sanitized["user_id"] = member["user_id"]
+    return sanitized
 
 @db_retry(max_retries=3)
 def create_allocation(decoded_payload=None):
@@ -32,9 +50,12 @@ def create_allocation(decoded_payload=None):
         except ValueError:
             return jsonify({"msg": "Invalid date format. Use YYYY-MM-DD", "status": 0}), 400
 
+        # Sanitize members
+        sanitized_members = [sanitize_member(m) for m in members]
+
         new_allocation = ProjectAllocation(
             project_id=project_id,
-            members=members,
+            members=sanitized_members,
             start_date=start_date,
             end_date=end_date,
             remark=remark,
@@ -209,7 +230,9 @@ def update_allocation(allocation_id, decoded_payload=None):
         if "members" in data:
             if not isinstance(data["members"], list):
                 return jsonify({"msg": "Members must be a JSON array", "status": 0}), 400
-            alloc.members = data["members"]
+            # Sanitize members
+            sanitized_members = [sanitize_member(m) for m in data["members"]]
+            alloc.members = sanitized_members
         if "start_date" in data:
             alloc.start_date = datetime.datetime.strptime(data["start_date"], '%Y-%m-%d').date()
         if "end_date" in data:
@@ -236,13 +259,80 @@ def update_allocation_members(allocation_id, decoded_payload=None):
         if members is not None:
             if not isinstance(members, list):
                 return jsonify({"msg": "Members must be a JSON array", "status": 0}), 400
-            alloc.members = members
+            # Sanitize members
+            sanitized_members = [sanitize_member(m) for m in members]
+            alloc.members = sanitized_members
             db.session.commit()
             return jsonify({"message": "Members updated successfully", "status": 1}), 200
         
         return jsonify({"msg": "No members data provided", "status": 0}), 400
     except Exception as e:
         db.session.rollback()
+        return jsonify({"success": 0, "error": str(e)}), 500
+
+@db_retry(max_retries=3)
+def get_available_users_by_project(project_id, decoded_payload=None):
+    try:
+        alloc = ProjectAllocation.query.filter_by(project_id=project_id).first()
+        available_users = []
+        worker_user_ids = set()
+        
+        # First add allocated workers and admins from allocation
+        if alloc and alloc.members:
+            for member in alloc.members:
+                user_id = member.get("user_id")
+                role = member.get("role")
+                if not user_id:
+                    continue
+                
+                user = None
+                if role and "admin" in role.lower():
+                    user = Admin.query.get(user_id)
+                    if user:
+                        available_users.append({
+                            "type": "admin",
+                            "user_id": user.id,
+                            "first_name": user.first_name,
+                            "last_name": user.last_name,
+                            "email": user.email,
+                            "avatar_url": user.avatar_url,
+                            "role": role
+                        })
+                else:
+                    user = Worker.query.get(user_id)
+                    if user:
+                        worker_user_ids.add(user_id)
+                        available_users.append({
+                            "type": "worker",
+                            "user_id": user.id,
+                            "first_name": user.first_name,
+                            "last_name": user.last_name,
+                            "email": user.email,
+                            "avatar_url": user.avatar_url,
+                            "role": role
+                        })
+        
+        # Now add all remaining admins from admin table that are not already in the list
+        all_admins = Admin.query.all()
+        for admin in all_admins:
+            # Check if admin is not already in the list
+            if not any(u["type"] == "admin" and u["user_id"] == admin.id for u in available_users):
+                available_users.append({
+                    "type": "admin",
+                    "user_id": admin.id,
+                    "first_name": admin.first_name,
+                    "last_name": admin.last_name,
+                    "email": admin.email,
+                    "avatar_url": admin.avatar_url,
+                    "role": "Admin"
+                })
+        
+        # Sort the list: workers first, then admins
+        available_users.sort(key=lambda x: 0 if x["type"] == "worker" else 1)
+        
+        return jsonify({"available_users": available_users, "status": 1}), 200
+    except Exception as e:
+        print(f"Error getting available users: {str(e)}")
         return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)

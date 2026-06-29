@@ -7,6 +7,7 @@ from src.controllers.project_allocation_controller import (
     update_allocation,
     update_allocation_members,
     delete_allocation,
+    get_available_users_by_project,
 )
 from src.utils.jwt import token_required
 
@@ -41,6 +42,11 @@ def update_allocation_route(decoded_payload, allocation_id):
 @token_required
 def update_allocation_members_route(decoded_payload, allocation_id):
     return update_allocation_members(allocation_id, decoded_payload)
+
+@project_allocation_bp.route("/project/<int:project_id>/available-users", methods=["GET"])
+@token_required
+def get_available_users_by_project_route(decoded_payload, project_id):
+    return get_available_users_by_project(project_id, decoded_payload)
 
 @project_allocation_bp.route("/<int:allocation_id>", methods=["DELETE"])
 @token_required
