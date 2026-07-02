@@ -5,6 +5,9 @@ from src.controllers.auth_controller import (
     token_refresh_controller,
     google_login_controller,
     microsoft_login_controller,
+    forgot_password_controller,
+    verify_otp_controller,
+    reset_password_controller,
 )
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
@@ -40,7 +43,19 @@ def token_refresh():
     return token_refresh_controller()
 
 
-# @user_bp.route("/", methods=["GET"])
-# @token_required
-# def get_user(decoded_payload):
-#     return get_user_controller()
+# Forgot Password route
+@auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    return forgot_password_controller()
+
+
+# Verify OTP route
+@auth_bp.route("/verify-otp", methods=["POST"])
+def verify_otp():
+    return verify_otp_controller()
+
+
+# Reset Password route
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    return reset_password_controller()
