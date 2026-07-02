@@ -68,7 +68,10 @@ def create_allocation(decoded_payload=None):
         return jsonify({"msg": "Project allocation created successfully", "status": 1, "id": new_allocation.id}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_allocation(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 def normalize_role_name(role_name):
     """Convert role name to lowercase snake_case for consistency."""
@@ -117,7 +120,10 @@ def get_all_allocations(decoded_payload=None):
         return jsonify({"allocations": result, "status": 1}), 200
     except Exception as e:
         print(f"Error in get_all_allocations: {str(e)}")
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_allocations(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_allocation_by_project_id(project_id, decoded_payload=None):
@@ -169,7 +175,10 @@ def get_allocation_by_project_id(project_id, decoded_payload=None):
         return jsonify({"allocation": result, "status": 1}), 200
     except Exception as e:
         print(f"Error in get_allocation_by_project_id: {str(e)}")
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_allocation_by_project_id(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_allocation_by_id(allocation_id, decoded_payload=None):
@@ -214,7 +223,10 @@ def get_allocation_by_id(allocation_id, decoded_payload=None):
         return jsonify({"allocation": result, "status": 1}), 200
     except Exception as e:
         print(f"Error in get_allocation_by_id: {str(e)}")
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_allocation_by_id(allocation_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_allocation(allocation_id, decoded_payload=None):
@@ -244,7 +256,10 @@ def update_allocation(allocation_id, decoded_payload=None):
         return jsonify({"message": "Allocation updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_allocation(allocation_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_allocation_members(allocation_id, decoded_payload=None):
@@ -268,7 +283,10 @@ def update_allocation_members(allocation_id, decoded_payload=None):
         return jsonify({"msg": "No members data provided", "status": 0}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_allocation_members(allocation_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_available_users_by_project(project_id, decoded_payload=None):
@@ -333,7 +351,10 @@ def get_available_users_by_project(project_id, decoded_payload=None):
         return jsonify({"available_users": available_users, "status": 1}), 200
     except Exception as e:
         print(f"Error getting available users: {str(e)}")
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_available_users_by_project(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_allocation(allocation_id, decoded_payload=None):
@@ -348,4 +369,7 @@ def delete_allocation(allocation_id, decoded_payload=None):
     except Exception as e:
         db.session.rollback()
         print(f"Error deleting allocation: {str(e)}")
-        return jsonify({"success": 0, "msg": "Failed to delete allocation. Please try again later.", "status": 0}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_allocation(allocation_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "msg": "Failed to delete allocation. Please try again later.", "status": 0}), 500

@@ -136,7 +136,10 @@ def create_task(decoded_payload=None):
         return jsonify({"msg": "Task(s) created successfully", "status": 1, "task_ids": created_task_ids}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_task(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_tasks_by_project(project_id, decoded_payload=None):
@@ -145,6 +148,16 @@ def get_tasks_by_project(project_id, decoded_payload=None):
         
         result = []
         for task in tasks:
+            # Calculate actual hours from subtasks if there are any
+            total_actual_hours = None
+            if task.sub_tasks and len(task.sub_tasks) > 0:
+                total_actual_hours = 0.0
+                for sub_task in task.sub_tasks:
+                    if sub_task.actual_hours:
+                        total_actual_hours += float(sub_task.actual_hours)
+            else:
+                total_actual_hours = float(task.actual_hours) if task.actual_hours else None
+            
             # Enrich members
             enriched_members = []
             # Use task.worker_ids if available, else task.members (backward compatibility)
@@ -185,7 +198,7 @@ def get_tasks_by_project(project_id, decoded_payload=None):
                 "assigned_by": task.assigned_by, # Backward compatibility
                 "worker_ids": task.worker_ids, # Backward compatibility
                 "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "actual_hours": total_actual_hours,
                 "remark": task.remark,
                 "created_at": task.created_at,
                 "members": enriched_members
@@ -197,7 +210,10 @@ def get_tasks_by_project(project_id, decoded_payload=None):
         import traceback
         print(f"Error in get_tasks_by_project: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_tasks_by_project(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_tasks_by_sprint(sprint_id, decoded_payload=None):
@@ -206,6 +222,16 @@ def get_tasks_by_sprint(sprint_id, decoded_payload=None):
         
         result = []
         for task in tasks:
+            # Calculate actual hours from subtasks if there are any
+            total_actual_hours = None
+            if task.sub_tasks and len(task.sub_tasks) > 0:
+                total_actual_hours = 0.0
+                for sub_task in task.sub_tasks:
+                    if sub_task.actual_hours:
+                        total_actual_hours += float(sub_task.actual_hours)
+            else:
+                total_actual_hours = float(task.actual_hours) if task.actual_hours else None
+            
             # Enrich members
             enriched_members = []
             # Use task.worker_ids if available, else task.members (backward compatibility)
@@ -246,7 +272,7 @@ def get_tasks_by_sprint(sprint_id, decoded_payload=None):
                 "assigned_by": task.assigned_by, # Backward compatibility
                 "worker_ids": task.worker_ids, # Backward compatibility
                 "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "actual_hours": total_actual_hours,
                 "remark": task.remark,
                 "created_at": task.created_at,
                 "members": enriched_members
@@ -258,7 +284,10 @@ def get_tasks_by_sprint(sprint_id, decoded_payload=None):
         import traceback
         print(f"Error in get_tasks_by_sprint: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_tasks_by_sprint(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_all_tasks(decoded_payload=None):
@@ -266,6 +295,16 @@ def get_all_tasks(decoded_payload=None):
         tasks = Task.query.all()
         result = []
         for task in tasks:
+            # Calculate actual hours from subtasks if there are any
+            total_actual_hours = None
+            if task.sub_tasks and len(task.sub_tasks) > 0:
+                total_actual_hours = 0.0
+                for sub_task in task.sub_tasks:
+                    if sub_task.actual_hours:
+                        total_actual_hours += float(sub_task.actual_hours)
+            else:
+                total_actual_hours = float(task.actual_hours) if task.actual_hours else None
+            
             # Enrich members
             enriched_members = []
             # Use task.worker_ids if available, else task.members (backward compatibility)
@@ -306,7 +345,7 @@ def get_all_tasks(decoded_payload=None):
                 "assigned_by": task.assigned_by, # Backward compatibility
                 "worker_ids": task.worker_ids, # Backward compatibility
                 "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "actual_hours": total_actual_hours,
                 "remark": task.remark,
                 "created_at": task.created_at,
                 "members": enriched_members
@@ -317,7 +356,10 @@ def get_all_tasks(decoded_payload=None):
         import traceback
         print(f"Error in get_all_tasks: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_tasks(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_task_by_id(task_id, decoded_payload=None):
@@ -325,6 +367,16 @@ def get_task_by_id(task_id, decoded_payload=None):
         task = Task.query.get(task_id)
         if not task:
             return jsonify({"message": "Task not found", "status": 0}), 404
+        
+        # Calculate actual hours from subtasks if there are any
+        total_actual_hours = None
+        if task.sub_tasks and len(task.sub_tasks) > 0:
+            total_actual_hours = 0.0
+            for sub_task in task.sub_tasks:
+                if sub_task.actual_hours:
+                    total_actual_hours += float(sub_task.actual_hours)
+        else:
+            total_actual_hours = float(task.actual_hours) if task.actual_hours else None
         
         # Enrich members
         enriched_members = []
@@ -366,7 +418,7 @@ def get_task_by_id(task_id, decoded_payload=None):
             "assigned_by": task.assigned_by, # Backward compatibility
             "worker_ids": task.worker_ids, # Backward compatibility
             "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-            "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+            "actual_hours": total_actual_hours,
             "remark": task.remark,
             "created_at": task.created_at,
             "members": enriched_members
@@ -376,7 +428,10 @@ def get_task_by_id(task_id, decoded_payload=None):
         import traceback
         print(f"Error in get_task_by_id: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_task_by_id(task_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_task(task_id, decoded_payload=None):
@@ -386,6 +441,20 @@ def update_task(task_id, decoded_payload=None):
             return jsonify({"message": "Task not found", "status": 0}), 404
 
         data = request.get_json()
+        
+        if "status_id" in data:
+            new_status = TaskStatus.query.get(data["status_id"])
+            if new_status and new_status.is_completed:
+                # Check if all subtasks are completed
+                if task.sub_tasks and len(task.sub_tasks) > 0:
+                    all_subtasks_completed = True
+                    for sub_task in task.sub_tasks:
+                        sub_task_status = TaskStatus.query.get(sub_task.status_id)
+                        if not sub_task_status or not sub_task_status.is_completed:
+                            all_subtasks_completed = False
+                            break
+                    if not all_subtasks_completed:
+                        return jsonify({"message": "Cannot mark task as completed until all subtasks are completed", "status": 0}), 400
         
         if "project_id" in data:
             task.project_id = data["project_id"]
@@ -424,7 +493,10 @@ def update_task(task_id, decoded_payload=None):
         return jsonify({"message": "Task updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_task(task_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_task(task_id, decoded_payload=None):
@@ -442,7 +514,10 @@ def delete_task(task_id, decoded_payload=None):
         return jsonify({"message": "Task deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_task(task_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_dashboard_tasks(decoded_payload=None):
@@ -549,6 +624,16 @@ def get_dashboard_tasks(decoded_payload=None):
                                     enriched_members.append(member)
                     print(f"Enriched members: {enriched_members}")
                     
+                    # Calculate actual hours from subtasks if there are any
+                    total_actual_hours = None
+                    if task.sub_tasks and len(task.sub_tasks) > 0:
+                        total_actual_hours = 0.0
+                        for sub_task in task.sub_tasks:
+                            if sub_task.actual_hours:
+                                total_actual_hours += float(sub_task.actual_hours)
+                    else:
+                        total_actual_hours = float(task.actual_hours) if task.actual_hours else None
+                    
                     assigned_by_person = get_person_details(task.assigned_by_role, task.assigned_by_role_id)
                     task_data = {
                         "id": task.id,
@@ -570,7 +655,7 @@ def get_dashboard_tasks(decoded_payload=None):
                         "assigned_by_role": task.assigned_by_role,
                         "assigned_by_person": assigned_by_person,
                         "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-                        "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                        "actual_hours": total_actual_hours,
                         "remark": task.remark,
                         "created_at": task.created_at.isoformat() if task.created_at else None,
                         "members": enriched_members
@@ -675,6 +760,16 @@ def get_dashboard_tasks(decoded_payload=None):
                                     enriched_members.append(member)
                     print(f"Enriched members: {enriched_members}")
                     
+                    # Calculate actual hours from subtasks if there are any
+                    total_actual_hours = None
+                    if task.sub_tasks and len(task.sub_tasks) > 0:
+                        total_actual_hours = 0.0
+                        for sub_task in task.sub_tasks:
+                            if sub_task.actual_hours:
+                                total_actual_hours += float(sub_task.actual_hours)
+                    else:
+                        total_actual_hours = float(task.actual_hours) if task.actual_hours else None
+                    
                     assigned_by_person = get_person_details(task.assigned_by_role, task.assigned_by_role_id)
                     task_data = {
                         "id": task.id,
@@ -696,7 +791,7 @@ def get_dashboard_tasks(decoded_payload=None):
                         "assigned_by_role": task.assigned_by_role,
                         "assigned_by_person": assigned_by_person,
                         "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-                        "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                        "actual_hours": total_actual_hours,
                         "remark": task.remark,
                         "created_at": task.created_at.isoformat() if task.created_at else None,
                         "members": enriched_members
@@ -713,7 +808,10 @@ def get_dashboard_tasks(decoded_payload=None):
         import traceback
         print(f"Error in get_dashboard_tasks: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_dashboard_tasks(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 
 @db_retry(max_retries=3)
@@ -792,6 +890,16 @@ def get_project_backlog(project_id, decoded_payload=None):
                                 enriched_members.append(member)
                         else:
                             enriched_members.append(member)
+            # Calculate actual hours from subtasks if there are any
+            total_actual_hours = None
+            if task.sub_tasks and len(task.sub_tasks) > 0:
+                total_actual_hours = 0.0
+                for sub_task in task.sub_tasks:
+                    if sub_task.actual_hours:
+                        total_actual_hours += float(sub_task.actual_hours)
+            else:
+                total_actual_hours = float(task.actual_hours) if task.actual_hours else None
+            
             assigned_by_person = get_person_details(task.assigned_by_role, task.assigned_by_role_id)
             task_status = status_map.get(task.status_id)
             task_data = {
@@ -818,7 +926,7 @@ def get_project_backlog(project_id, decoded_payload=None):
                 "worker_ids": task.worker_ids,
                 "assigned_workers": enriched_members,
                 "estimated_hours": float(task.estimated_hours) if task.estimated_hours else None,
-                "actual_hours": float(task.actual_hours) if task.actual_hours else None,
+                "actual_hours": total_actual_hours,
                 "remark": task.remark,
                 "created_at": task.created_at.isoformat() if task.created_at else None,
                 "members": enriched_members
@@ -959,4 +1067,7 @@ def get_project_backlog(project_id, decoded_payload=None):
         import traceback
         print(f"Error in get_project_backlog: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_project_backlog(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

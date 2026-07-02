@@ -261,7 +261,7 @@ def get_project_task_data(project_id, sprint_id=None, decoded_payload=None):
             all_admins_list.append({
                 "user_id": admin.id,
                 "type": "admin",
-                "role": admin_role,  # Added role field
+                "role": admin_role, # Added role field
                 "first_name": admin.first_name,
                 "last_name": admin.last_name,
                 "email": admin.email,
@@ -282,4 +282,7 @@ def get_project_task_data(project_id, sprint_id=None, decoded_payload=None):
         import traceback
         print(f"Error in get_project_task_data: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_project_task_data(project_id, sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

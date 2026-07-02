@@ -67,7 +67,7 @@ def create_project(decoded_payload=None):
         # Automatically create a project allocation entry
         new_allocation = ProjectAllocation(
             project_id=new_project.id,
-            members=[], # Default empty members as requested
+            members=[], # Default to empty list as requested
             start_date=start_date,
             end_date=end_date,
             remark=remark,
@@ -80,7 +80,10 @@ def create_project(decoded_payload=None):
         return jsonify({"msg": "Project created successfully and allocation initialized", "status": 1, "project_id": new_project.id}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_project(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_all_projects(decoded_payload=None):
@@ -96,11 +99,11 @@ def get_all_projects(decoded_payload=None):
         if role in ["team_leader", "worker"] and role_id:
             filtered_project_ids = []
             allocations = ProjectAllocation.query.all()
-            for allocation in allocations:
-                members = allocation.members or []
+            for alloc in allocations:
+                members = alloc.members or []
                 for member in members:
                     if member.get("user_id") == role_id:
-                        filtered_project_ids.append(allocation.project_id)
+                        filtered_project_ids.append(alloc.project_id)
                         break
             
             # Filter projects to only those in filtered_project_ids
@@ -158,7 +161,10 @@ def get_all_projects(decoded_payload=None):
             })
         return jsonify({"projects": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_projects(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_project_by_id(project_id, decoded_payload=None):
@@ -217,7 +223,10 @@ def get_project_by_id(project_id, decoded_payload=None):
         }
         return jsonify({"project": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_project_by_id(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_project(project_id, decoded_payload=None):
@@ -259,7 +268,10 @@ def update_project(project_id, decoded_payload=None):
         return jsonify({"message": "Project updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_project(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_project(project_id, decoded_payload=None):
@@ -309,4 +321,7 @@ def delete_project(project_id, decoded_payload=None):
     except Exception as e:
         db.session.rollback()
         print(f"Error deleting project: {str(e)}")
-        return jsonify({"success": 0, "msg": "Failed to delete project. Please try again later.", "status": 0}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_project(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "msg": "Failed to delete project. Please try again later.", "status": 0}), 500

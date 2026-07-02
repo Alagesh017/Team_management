@@ -36,8 +36,11 @@ def create_activity_log(role_id, role, table_name, record_id, action, old_data=N
         return True
     except Exception as e:
         db.session.rollback()
-        print(f"Error creating activity log: {e}")
-        return False
+        if "MySQL server has gone away" in str(e):
+            return create_activity_log(role_id, role, table_name, record_id, action, old_data, new_data, remark)
+        else:
+            print(f"Error creating activity log: {e}")
+            return False
 
 @db_retry(max_retries=3)
 def get_all_activity_logs(decoded_payload=None):
@@ -63,7 +66,10 @@ def get_all_activity_logs(decoded_payload=None):
             })
         return jsonify({"logs": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_activity_logs(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_logs_by_role(role_id, role):
@@ -83,7 +89,10 @@ def get_logs_by_role(role_id, role):
             })
         return jsonify({"logs": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_logs_by_role(role_id, role)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 # Backward compatibility
 def get_logs_by_user(user_id, decoded_payload=None):
@@ -107,4 +116,7 @@ def get_logs_by_table(table_name, decoded_payload=None):
             })
         return jsonify({"logs": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_logs_by_table(table_name, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

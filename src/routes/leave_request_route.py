@@ -3,12 +3,15 @@ from src.controllers.leave_request_controller import (
     create_leave_request,
     get_all_leave_requests,
     get_my_leave_requests,
+    get_leave_request_by_id,
     review_leave_request,
+    cancel_leave_request,
     delete_leave_request,
+    upload_attachment
 )
 from src.utils.jwt import token_required
 
-leave_request_bp = Blueprint("leave_request", __name__, url_prefix="/api/v1/leave_requests")
+leave_request_bp = Blueprint("leave", __name__, url_prefix="/api/v1/leave")
 
 @leave_request_bp.route("/", methods=["POST"])
 @token_required
@@ -17,20 +20,35 @@ def create_leave_request_route(decoded_payload):
 
 @leave_request_bp.route("/", methods=["GET"])
 @token_required
-def get_all_leaves_route(decoded_payload):
-    return get_all_leave_requests()
+def get_all_leave_requests_route(decoded_payload):
+    return get_all_leave_requests(decoded_payload)
 
 @leave_request_bp.route("/my", methods=["GET"])
 @token_required
-def get_my_leaves_route(decoded_payload):
+def get_my_leave_requests_route(decoded_payload):
     return get_my_leave_requests(decoded_payload)
 
-@leave_request_bp.route("/review/<int:leave_id>", methods=["PUT"])
+@leave_request_bp.route("/<int:leave_id>", methods=["GET"])
 @token_required
-def review_leave_route(decoded_payload, leave_id):
+def get_leave_request_by_id_route(decoded_payload, leave_id):
+    return get_leave_request_by_id(leave_id, decoded_payload)
+
+@leave_request_bp.route("/<int:leave_id>/review", methods=["PUT"])
+@token_required
+def review_leave_request_route(decoded_payload, leave_id):
     return review_leave_request(leave_id, decoded_payload)
+
+@leave_request_bp.route("/<int:leave_id>/cancel", methods=["PUT"])
+@token_required
+def cancel_leave_request_route(decoded_payload, leave_id):
+    return cancel_leave_request(leave_id, decoded_payload)
 
 @leave_request_bp.route("/<int:leave_id>", methods=["DELETE"])
 @token_required
-def delete_leave_route(decoded_payload, leave_id):
+def delete_leave_request_route(decoded_payload, leave_id):
     return delete_leave_request(leave_id, decoded_payload)
+
+@leave_request_bp.route("/upload", methods=["POST"])
+@token_required
+def upload_attachment_route(decoded_payload):
+    return upload_attachment(decoded_payload)

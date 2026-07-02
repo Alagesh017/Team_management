@@ -46,7 +46,10 @@ def create_sprint(decoded_payload=None):
         return jsonify({"msg": "Sprint created successfully", "status": 1, "id": new_sprint.id}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_sprint(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_all_sprints(decoded_payload=None):
@@ -117,7 +120,10 @@ def get_all_sprints(decoded_payload=None):
             result.append(sprint_data)
         return jsonify({"sprints": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_sprints(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_sprint_by_id(sprint_id, decoded_payload=None):
@@ -164,7 +170,10 @@ def get_sprint_by_id(sprint_id, decoded_payload=None):
             })
         return jsonify({"sprint": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_sprint_by_id(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_sprint(sprint_id, decoded_payload=None):
@@ -198,7 +207,10 @@ def update_sprint(sprint_id, decoded_payload=None):
         return jsonify({"message": "Sprint updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_sprint(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_sprint(sprint_id, decoded_payload=None):
@@ -219,7 +231,10 @@ def delete_sprint(sprint_id, decoded_payload=None):
         return jsonify({"message": "Sprint deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_sprint(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def start_sprint(sprint_id, decoded_payload=None):
@@ -246,7 +261,10 @@ def start_sprint(sprint_id, decoded_payload=None):
         return jsonify({"message": "Sprint started successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return start_sprint(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def end_sprint(sprint_id, decoded_payload=None):
@@ -268,7 +286,10 @@ def end_sprint(sprint_id, decoded_payload=None):
         return jsonify({"message": "Sprint ended successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return end_sprint(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def start_sprint_with_move(sprint_id, decoded_payload=None):
@@ -313,4 +334,7 @@ def start_sprint_with_move(sprint_id, decoded_payload=None):
         return jsonify({"message": "Sprint started successfully, tasks moved", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return start_sprint_with_move(sprint_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

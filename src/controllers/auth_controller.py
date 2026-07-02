@@ -82,7 +82,10 @@ def register_controller():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return register_controller()
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 
 @db_retry(max_retries=3)
@@ -133,7 +136,10 @@ def login_controller():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return login_controller()
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 
 @db_retry(max_retries=3)
@@ -179,7 +185,10 @@ def google_login_controller():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return google_login_controller()
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 
 @db_retry(max_retries=3)
@@ -226,7 +235,10 @@ def microsoft_login_controller():
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return microsoft_login_controller()
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 
 @db_retry(max_retries=3)
@@ -262,4 +274,7 @@ def token_refresh_controller():
         }), 200
         
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return token_refresh_controller()
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

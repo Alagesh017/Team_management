@@ -40,7 +40,10 @@ def create_message(decoded_payload=None):
         return jsonify({"msg": "Message sent successfully", "status": 1, "message_id": new_message.id}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_message(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_messages_by_meeting(meeting_id, decoded_payload=None):
@@ -65,7 +68,10 @@ def get_messages_by_meeting(meeting_id, decoded_payload=None):
             })
         return jsonify({"messages": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_messages_by_meeting(meeting_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_message_by_id(message_id, decoded_payload=None):
@@ -91,7 +97,10 @@ def get_message_by_id(message_id, decoded_payload=None):
         }
         return jsonify({"message": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_message_by_id(message_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_message(message_id, decoded_payload=None):
@@ -113,7 +122,10 @@ def update_message(message_id, decoded_payload=None):
         return jsonify({"msg": "Message updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_message(message_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_message(message_id, decoded_payload=None):
@@ -127,4 +139,7 @@ def delete_message(message_id, decoded_payload=None):
         return jsonify({"msg": "Message deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_message(message_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

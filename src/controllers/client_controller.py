@@ -32,7 +32,10 @@ def create_client(decoded_payload=None):
         return jsonify({"msg": "Client created successfully", "status": 1, "client_id": new_client.id}), 201
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_client(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_all_clients(decoded_payload=None):
@@ -52,7 +55,10 @@ def get_all_clients(decoded_payload=None):
             })
         return jsonify({"clients": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_clients(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_client_by_id(client_id, decoded_payload=None):
@@ -73,7 +79,10 @@ def get_client_by_id(client_id, decoded_payload=None):
         }
         return jsonify({"client": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_client_by_id(client_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_client(client_id, decoded_payload=None):
@@ -101,7 +110,10 @@ def update_client(client_id, decoded_payload=None):
         return jsonify({"message": "Client updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_client(client_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_client(client_id, decoded_payload=None):
@@ -115,4 +127,7 @@ def delete_client(client_id, decoded_payload=None):
         return jsonify({"message": "Client deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_client(client_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

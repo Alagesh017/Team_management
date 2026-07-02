@@ -36,16 +36,19 @@ def create_project_excel(decoded_payload=None):
         db.session.commit()
         
         return jsonify({
-            "msg": "Project Excel file created successfully", 
-            "status": 1, 
-            "excel_id": new_excel.id, 
+            "msg": "Project Excel file created successfully",
+            "status": 1,
+            "excel_id": new_excel.id,
             "file_url": file_url,
             "file_name": file_name
         }), 201
     except Exception as e:
         db.session.rollback()
-        print("Error creating excel:", str(e))
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_project_excel(decoded_payload)
+        else:
+            print("Error creating excel:", str(e))
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_all_project_excels(decoded_payload=None):
@@ -63,7 +66,10 @@ def get_all_project_excels(decoded_payload=None):
         return jsonify({"excel_files": result, "status": 1}), 200
     except Exception as e:
         print("Error getting all excels:", str(e))
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_project_excels(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_excel_by_id(excel_id, decoded_payload=None):
@@ -82,7 +88,10 @@ def get_excel_by_id(excel_id, decoded_payload=None):
         return jsonify({"excel_file": result, "status": 1}), 200
     except Exception as e:
         print("Error getting excel by id:", str(e))
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_excel_by_id(excel_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_excels_by_project_id(project_id, decoded_payload=None):
@@ -100,7 +109,10 @@ def get_excels_by_project_id(project_id, decoded_payload=None):
         return jsonify({"excel_files": result, "status": 1}), 200
     except Exception as e:
         print("Error getting excels by project id:", str(e))
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_excels_by_project_id(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_project_excel(excel_id, decoded_payload=None):
@@ -117,8 +129,11 @@ def update_project_excel(excel_id, decoded_payload=None):
         return jsonify({"msg": "Excel file updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        print("Error updating excel:", str(e))
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_project_excel(excel_id, decoded_payload)
+        else:
+            print("Error updating excel:", str(e))
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_project_excel(excel_id, decoded_payload=None):
@@ -132,5 +147,8 @@ def delete_project_excel(excel_id, decoded_payload=None):
         return jsonify({"msg": "Excel file deleted successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        print("Error deleting excel:", str(e))
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_project_excel(excel_id, decoded_payload)
+        else:
+            print("Error deleting excel:", str(e))
+            return jsonify({"success": 0, "error": str(e)}), 500

@@ -63,4 +63,7 @@ def get_project_members(project_id, decoded_payload=None):
         import traceback
         print(f"Error in get_project_members: {str(e)}")
         print(traceback.format_exc())
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_project_members(project_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500

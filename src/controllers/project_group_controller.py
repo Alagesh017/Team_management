@@ -29,11 +29,14 @@ def create_project_group(decoded_payload=None):
         return jsonify({"msg": "Project group created successfully", "status": 1, "id": new_group.id}), 201
     except Exception as e:
         db.session.rollback()
-        # Check for duplicate entry error
-        if "Duplicate entry" in str(e):
-            if "name" in str(e):
-                return jsonify({"msg": "Project group name already exists", "status": 0}), 409
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return create_project_group(decoded_payload)
+        else:
+            # Check for duplicate entry error
+            if "Duplicate entry" in str(e):
+                if "name" in str(e):
+                    return jsonify({"msg": "Project group name already exists", "status": 0}), 409
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_all_project_groups(decoded_payload=None):
@@ -50,7 +53,10 @@ def get_all_project_groups(decoded_payload=None):
             })
         return jsonify({"groups": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_all_project_groups(decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def get_project_group_by_id(group_id, decoded_payload=None):
@@ -76,7 +82,10 @@ def get_project_group_by_id(group_id, decoded_payload=None):
         }
         return jsonify({"group": result, "status": 1}), 200
     except Exception as e:
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return get_project_group_by_id(group_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def update_project_group(group_id, decoded_payload=None):
@@ -101,11 +110,14 @@ def update_project_group(group_id, decoded_payload=None):
         return jsonify({"msg": "Project group updated successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        # Check for duplicate entry error
-        if "Duplicate entry" in str(e):
-            if "name" in str(e):
-                return jsonify({"msg": "Project group name already exists", "status": 0}), 409
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return update_project_group(group_id, decoded_payload)
+        else:
+            # Check for duplicate entry error
+            if "Duplicate entry" in str(e):
+                if "name" in str(e):
+                    return jsonify({"msg": "Project group name already exists", "status": 0}), 409
+            return jsonify({"success": 0, "error": str(e)}), 500
 
 @db_retry(max_retries=3)
 def delete_project_group(group_id, decoded_payload=None):
@@ -124,7 +136,10 @@ def delete_project_group(group_id, decoded_payload=None):
     except Exception as e:
         db.session.rollback()
         print(f"Error deleting project group: {str(e)}")
-        return jsonify({"success": 0, "msg": "Failed to delete project group. Please try again later.", "status": 0}), 500
+        if "MySQL server has gone away" in str(e):
+            return delete_project_group(group_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "msg": "Failed to delete project group. Please try again later.", "status": 0}), 500
 
 @db_retry(max_retries=3)
 def add_projects_to_group(group_id, decoded_payload=None):
@@ -148,4 +163,7 @@ def add_projects_to_group(group_id, decoded_payload=None):
         return jsonify({"msg": "Projects added to group successfully", "status": 1}), 200
     except Exception as e:
         db.session.rollback()
-        return jsonify({"success": 0, "error": str(e)}), 500
+        if "MySQL server has gone away" in str(e):
+            return add_projects_to_group(group_id, decoded_payload)
+        else:
+            return jsonify({"success": 0, "error": str(e)}), 500
