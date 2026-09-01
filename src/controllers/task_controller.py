@@ -826,7 +826,9 @@ def get_project_backlog(project_id, decoded_payload=None):
         status_map = {status.id: status for status in all_statuses}
         
         # 2. Get all backlog tasks for the project: tasks with no sprint_id and backlog status
-        backlog_tasks_query = Task.query.filter_by(project_id=project_id, sprint_id=None, status_id=backlog_status.id)
+        backlog_tasks_query = Task.query.filter_by(project_id=project_id, sprint_id=None)
+        if backlog_status:
+            backlog_tasks_query = backlog_tasks_query.filter_by(status_id=backlog_status.id)
         backlog_tasks = backlog_tasks_query.all()
         
         # Enrich backlog tasks

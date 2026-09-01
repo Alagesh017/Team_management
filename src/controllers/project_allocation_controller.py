@@ -44,6 +44,11 @@ def create_allocation(decoded_payload=None):
         if members and not isinstance(members, list):
             return jsonify({"msg": "Members must be a JSON array", "status": 0}), 400
 
+        # Check for existing allocation for this project
+        existing = ProjectAllocation.query.filter_by(project_id=project_id).first()
+        if existing:
+            return jsonify({"msg": "Project allocation already exists for this project", "status": 0}), 409
+
         try:
             start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d').date()
             end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
@@ -58,7 +63,7 @@ def create_allocation(decoded_payload=None):
             members=sanitized_members,
             start_date=start_date,
             end_date=end_date,
-            remark=remark,
+            remark=remark.strip() if remark else None,
             allocated_by_role_id=allocated_by_role_id,
             allocated_by_role=allocated_by_role
         )
@@ -250,7 +255,7 @@ def update_allocation(allocation_id, decoded_payload=None):
         if "end_date" in data:
             alloc.end_date = datetime.datetime.strptime(data["end_date"], '%Y-%m-%d').date() if data["end_date"] else None
         if "remark" in data:
-            alloc.remark = data["remark"]
+            alloc.remark = data["remark"].strip() if data["remark"] else None
             
         db.session.commit()
         return jsonify({"message": "Allocation updated successfully", "status": 1}), 200

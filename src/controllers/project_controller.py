@@ -9,6 +9,19 @@ from src.utils.image_utils import save_image
 from src.utils.role_utils import get_person_details
 from src.utils.db_retry import db_retry
 
+
+def safe_isoformat(date_val):
+    if date_val is None:
+        return None
+    if isinstance(date_val, str):
+        return date_val
+    try:
+        if hasattr(date_val, 'isoformat'):
+            return date_val.isoformat()
+        return str(date_val)
+    except Exception:
+        return str(date_val)
+
 @db_retry(max_retries=3)
 def create_project(decoded_payload=None):
     try:
@@ -36,8 +49,10 @@ def create_project(decoded_payload=None):
         created_by_role_id = decoded_payload.get("role_id") if decoded_payload else None
         created_by_role = decoded_payload.get("role") if decoded_payload else None
         
-        if not all([name, start_date_str]):
-            return jsonify({"msg": "Project name and start date are required", "status": 0}), 400
+        # Trim name
+        name = name.strip() if name else None
+        if not all([name, start_date_str, client_id, group_id]):
+            return jsonify({"msg": "Project name, start date, client and project group are required", "status": 0}), 400
 
         start_date = parse_date(start_date_str)
         end_date = parse_date(end_date_str) if end_date_str else None
@@ -49,12 +64,12 @@ def create_project(decoded_payload=None):
             client_id=client_id,
             name=name,
             group_id=group_id,
-            description=description,
+            description=description.strip() if description else None,
             start_date=start_date,
             end_date=end_date,
             status=status,
             project_logo=final_logo_url,
-            remark=remark,
+            remark=remark.strip() if remark else None,
             by_tl_managed=by_tl_managed,
             team_managed=team_managed,
             company_managed=company_managed,
@@ -70,7 +85,7 @@ def create_project(decoded_payload=None):
             members=[], # Default to empty list as requested
             start_date=start_date,
             end_date=end_date,
-            remark=remark,
+            remark=remark.strip() if remark else None,
             allocated_by_role_id=created_by_role_id,
             allocated_by_role=created_by_role
         )
@@ -126,16 +141,16 @@ def get_all_projects(decoded_payload=None):
                     "sprint_name": sprint.sprint_name,
                     "sprint_goal": sprint.sprint_goal,
                     "description": sprint.description,
-                    "start_date": sprint.start_date.isoformat(),
-                    "end_date": sprint.end_date.isoformat() if sprint.end_date else None,
+                    "start_date": safe_isoformat(sprint.start_date),
+                    "end_date": safe_isoformat(sprint.end_date),
                     "status": sprint.status,
                     "is_active": sprint.is_active,
                     "sprint_status": sprint.sprint_status,
                     "task_count": task_count,
                     "created_by": sprint.created_by,
                     "updated_by": sprint.updated_by,
-                    "created_at": sprint.created_at,
-                    "updated_at": sprint.updated_at
+                    "created_at": safe_isoformat(sprint.created_at),
+                    "updated_at": safe_isoformat(sprint.updated_at)
                 })
             result.append({
                 "id": project.id,
@@ -145,8 +160,8 @@ def get_all_projects(decoded_payload=None):
                 "group_id": project.group_id,
                 "group_name": project.group.name if project.group else None,
                 "description": project.description,
-                "start_date": project.start_date.isoformat(),
-                "end_date": project.end_date.isoformat() if project.end_date else None,
+                "start_date": safe_isoformat(project.start_date),
+                "end_date": safe_isoformat(project.end_date),
                 "status": project.status,
                 "project_logo": project.project_logo,
                 "remark": project.remark,
@@ -156,7 +171,7 @@ def get_all_projects(decoded_payload=None):
                 "created_by_role_id": project.created_by_role_id,
                 "created_by_role": project.created_by_role,
                 "created_by_person": created_by_person,
-                "created_at": project.created_at,
+                "created_at": safe_isoformat(project.created_at),
                 "sprints": sprints
             })
         return jsonify({"projects": result, "status": 1}), 200
@@ -188,16 +203,16 @@ def get_project_by_id(project_id, decoded_payload=None):
                 "sprint_name": sprint.sprint_name,
                 "sprint_goal": sprint.sprint_goal,
                 "description": sprint.description,
-                "start_date": sprint.start_date.isoformat(),
-                "end_date": sprint.end_date.isoformat() if sprint.end_date else None,
+                "start_date": safe_isoformat(sprint.start_date),
+                "end_date": safe_isoformat(sprint.end_date),
                 "status": sprint.status,
                 "is_active": sprint.is_active,
                 "sprint_status": sprint.sprint_status,
                 "task_count": task_count,
                 "created_by": sprint.created_by,
                 "updated_by": sprint.updated_by,
-                "created_at": sprint.created_at,
-                "updated_at": sprint.updated_at
+                "created_at": safe_isoformat(sprint.created_at),
+                "updated_at": safe_isoformat(sprint.updated_at)
             })
         result = {
             "id": project.id,
@@ -207,8 +222,8 @@ def get_project_by_id(project_id, decoded_payload=None):
             "group_name": project.group.name if project.group else None,
             "name": project.name,
             "description": project.description,
-            "start_date": project.start_date.isoformat(),
-            "end_date": project.end_date.isoformat() if project.end_date else None,
+            "start_date": safe_isoformat(project.start_date),
+            "end_date": safe_isoformat(project.end_date),
             "status": project.status,
             "project_logo": project.project_logo,
             "remark": project.remark,
@@ -218,7 +233,7 @@ def get_project_by_id(project_id, decoded_payload=None):
             "created_by_role_id": project.created_by_role_id,
             "created_by_role": project.created_by_role,
             "created_by_person": created_by_person,
-            "created_at": project.created_at,
+            "created_at": safe_isoformat(project.created_at),
             "sprints": sprints
         }
         return jsonify({"project": result, "status": 1}), 200
@@ -242,9 +257,9 @@ def update_project(project_id, decoded_payload=None):
         if "group_id" in data:
             project.group_id = data["group_id"]
         if "name" in data:
-            project.name = data["name"]
+            project.name = data["name"].strip() if data["name"] else None
         if "description" in data:
-            project.description = data["description"]
+            project.description = data["description"].strip() if data["description"] else None
         if "start_date" in data:
             project.start_date = parse_date(data["start_date"])
         if "end_date" in data:
@@ -256,7 +271,7 @@ def update_project(project_id, decoded_payload=None):
             saved_logo_url = save_image(project_logo, folder="project_logos")
             project.project_logo = saved_logo_url if saved_logo_url else project_logo
         if "remark" in data:
-            project.remark = data["remark"]
+            project.remark = data["remark"].strip() if data["remark"] else None
         if "by_tl_managed" in data:
             project.by_tl_managed = data["by_tl_managed"]
         if "team_managed" in data:

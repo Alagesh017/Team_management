@@ -14,7 +14,7 @@ class Admin(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     is_scrum = db.Column(db.Boolean, default=False)
     experience_years = db.Column(db.Float, nullable=True)
-    working_hours = db.Column(db.String(50), nullable=True)
+    working_hours = db.Column(db.Integer, nullable=True)
     work_mode = db.Column(db.Enum('WFH', 'OFFICE', 'HYBRID', name='work_mode_enum'), nullable=True)
     office_location = db.Column(db.String(255), nullable=True)
     linkedin_url = db.Column(db.String(255), nullable=True)

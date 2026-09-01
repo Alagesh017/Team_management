@@ -3,6 +3,19 @@ from src import db
 from src.models.sprint_model import Sprint
 from src.utils.db_retry import db_retry
 
+
+def safe_isoformat(date_val):
+    if date_val is None:
+        return None
+    if isinstance(date_val, str):
+        return date_val
+    try:
+        if hasattr(date_val, 'isoformat'):
+            return date_val.isoformat()
+        return str(date_val)
+    except Exception:
+        return str(date_val)
+
 @db_retry(max_retries=3)
 def create_sprint(decoded_payload=None):
     try:
@@ -95,8 +108,8 @@ def get_all_sprints(decoded_payload=None):
                 "sprint_name": sprint.sprint_name,
                 "sprint_goal": sprint.sprint_goal,
                 "description": sprint.description,
-                "start_date": sprint.start_date,
-                "end_date": sprint.end_date,
+                "start_date": safe_isoformat(sprint.start_date),
+                "end_date": safe_isoformat(sprint.end_date),
                 "status": sprint.status,
                 "is_active": sprint.is_active,
                 "sprint_status": sprint_status,
@@ -104,8 +117,8 @@ def get_all_sprints(decoded_payload=None):
                 "has_non_completed_tasks": has_non_completed_tasks,
                 "created_by": sprint.created_by,
                 "updated_by": sprint.updated_by,
-                "created_at": sprint.created_at,
-                "updated_at": sprint.updated_at,
+                "created_at": safe_isoformat(sprint.created_at),
+                "updated_at": safe_isoformat(sprint.updated_at),
                 "tasks": []
             }
             # Add tasks
@@ -148,15 +161,15 @@ def get_sprint_by_id(sprint_id, decoded_payload=None):
             "sprint_name": sprint.sprint_name,
             "sprint_goal": sprint.sprint_goal,
             "description": sprint.description,
-            "start_date": sprint.start_date,
-            "end_date": sprint.end_date,
+            "start_date": safe_isoformat(sprint.start_date),
+            "end_date": safe_isoformat(sprint.end_date),
             "status": sprint.status,
             "is_active": sprint.is_active,
             "sprint_status": sprint_status,
             "created_by": sprint.created_by,
             "updated_by": sprint.updated_by,
-            "created_at": sprint.created_at,
-            "updated_at": sprint.updated_at,
+            "created_at": safe_isoformat(sprint.created_at),
+            "updated_at": safe_isoformat(sprint.updated_at),
             "tasks": []
         }
         # Add tasks

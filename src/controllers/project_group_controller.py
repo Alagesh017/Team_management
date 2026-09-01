@@ -11,6 +11,8 @@ def create_project_group(decoded_payload=None):
         name = data.get("name")
         description = data.get("description")
         
+        # Trim name and validate
+        name = name.strip() if name else None
         if not name:
             return jsonify({"msg": "Group name is required", "status": 0}), 400
             
@@ -21,7 +23,7 @@ def create_project_group(decoded_payload=None):
 
         new_group = ProjectGroup(
             name=name,
-            description=description
+            description=description.strip() if description else None
         )
         db.session.add(new_group)
         db.session.commit()
@@ -96,7 +98,9 @@ def update_project_group(group_id, decoded_payload=None):
 
         data = request.get_json()
         if "name" in data:
-            name = data["name"]
+            name = data["name"].strip() if data["name"] else None
+            if not name:
+                return jsonify({"msg": "Group name is required", "status": 0}), 400
             # Check if name is taken by another group
             existing = ProjectGroup.query.filter_by(name=name).first()
             if existing and existing.id != group_id:
@@ -104,7 +108,7 @@ def update_project_group(group_id, decoded_payload=None):
             group.name = name
             
         if "description" in data:
-            group.description = data["description"]
+            group.description = data["description"].strip() if data["description"] else None
             
         db.session.commit()
         return jsonify({"msg": "Project group updated successfully", "status": 1}), 200

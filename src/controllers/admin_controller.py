@@ -18,6 +18,7 @@ def create_admin(decoded_payload=None):
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
+        phone = phone.strip() if phone else None
         avatar_url = data.get("avatar_url")
         
         # Save image if provided as base64
@@ -28,25 +29,47 @@ def create_admin(decoded_payload=None):
         is_admin = data.get("is_admin", False)
         is_scrum = data.get("is_scrum", False)
         remark = data.get("remark")
+        remark = remark.strip() if remark else None
 
         experience_years = data.get("experience_years")
-        if experience_years == "":
+        if experience_years == "" or experience_years is None:
             experience_years = None
+        else:
+            try:
+                experience_years = float(experience_years)
+            except (ValueError, TypeError):
+                experience_years = None
         working_hours = data.get("working_hours")
+        if working_hours == "" or working_hours is None:
+            working_hours = None
+        else:
+            try:
+                working_hours = int(working_hours)
+            except (ValueError, TypeError):
+                working_hours = None
         work_mode = data.get("work_mode")
+        work_mode = work_mode.strip() if work_mode else None
         office_location = data.get("office_location")
+        office_location = office_location.strip() if office_location else None
         linkedin_url = data.get("linkedin_url")
+        linkedin_url = linkedin_url.strip() if linkedin_url else None
         address_line1 = data.get("address_line1")
+        address_line1 = address_line1.strip() if address_line1 else None
         address_line2 = data.get("address_line2")
+        address_line2 = address_line2.strip() if address_line2 else None
         city = data.get("city")
+        city = city.strip() if city else None
         state = data.get("state")
+        state = state.strip() if state else None
         country = data.get("country")
+        country = country.strip() if country else None
         pincode = data.get("pincode")
+        pincode = pincode.strip() if pincode else None
         status = data.get("status", "ACTIVE")
         joining_date = parse_date(data.get("joining_date"))
 
-        if not all([email]):
-            return jsonify({"msg": "Email is mandatory", "status": 0}), 400
+        if not all([email, first_name, last_name]):
+            return jsonify({"msg": "First name, last name and email are mandatory", "status": 0}), 400
 
         if User.query.filter_by(email=email).first():
             return jsonify({"msg": "User with this email already exists", "status": 0}), 409
@@ -237,7 +260,7 @@ def update_admin(admin_id, decoded_payload=None):
             if user:
                 user.email = new_email
         if "phone" in data:
-            admin.phone = data["phone"]
+            admin.phone = data["phone"].strip() if data["phone"] else None
         if "is_superadmin" in data:
             admin.is_superadmin = data["is_superadmin"]
         if "is_admin" in data:
@@ -254,31 +277,38 @@ def update_admin(admin_id, decoded_payload=None):
                 except (ValueError, TypeError):
                     admin.experience_years = None
         if "working_hours" in data:
-            admin.working_hours = data["working_hours"]
+            wh_val = data["working_hours"]
+            if wh_val == "" or wh_val is None:
+                admin.working_hours = None
+            else:
+                try:
+                    admin.working_hours = int(wh_val)
+                except (ValueError, TypeError):
+                    admin.working_hours = None
         if "work_mode" in data:
-            admin.work_mode = data["work_mode"]
+            admin.work_mode = data["work_mode"].strip() if data["work_mode"] else None
         if "office_location" in data:
-            admin.office_location = data["office_location"]
+            admin.office_location = data["office_location"].strip() if data["office_location"] else None
         if "linkedin_url" in data:
-            admin.linkedin_url = data["linkedin_url"]
+            admin.linkedin_url = data["linkedin_url"].strip() if data["linkedin_url"] else None
         if "address_line1" in data:
-            admin.address_line1 = data["address_line1"]
+            admin.address_line1 = data["address_line1"].strip() if data["address_line1"] else None
         if "address_line2" in data:
-            admin.address_line2 = data["address_line2"]
+            admin.address_line2 = data["address_line2"].strip() if data["address_line2"] else None
         if "city" in data:
-            admin.city = data["city"]
+            admin.city = data["city"].strip() if data["city"] else None
         if "state" in data:
-            admin.state = data["state"]
+            admin.state = data["state"].strip() if data["state"] else None
         if "country" in data:
-            admin.country = data["country"]
+            admin.country = data["country"].strip() if data["country"] else None
         if "pincode" in data:
-            admin.pincode = data["pincode"]
+            admin.pincode = data["pincode"].strip() if data["pincode"] else None
         if "status" in data:
             admin.status = data["status"]
         if "joining_date" in data:
             admin.joining_date = parse_date(data["joining_date"])
         if "remark" in data:
-            admin.remark = data["remark"]
+            admin.remark = data["remark"].strip() if data["remark"] else None
             
         if "is_active" in data and user:
             user.is_active = data["is_active"]

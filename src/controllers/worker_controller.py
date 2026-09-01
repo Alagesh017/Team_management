@@ -17,6 +17,7 @@ def create_worker(decoded_payload=None):
         first_name = data.get("first_name")
         last_name = data.get("last_name")
         phone = data.get("phone")
+        phone = phone.strip() if phone else None
         avatar_url = data.get("avatar_url")
 
         # Save image if provided as base64
@@ -26,9 +27,12 @@ def create_worker(decoded_payload=None):
         is_tl = data.get("is_tl", False)
         is_worker = data.get("is_worker", False)
         remark = data.get("remark")
+        remark = remark.strip() if remark else None
 
         job_title = data.get("job_title")
+        job_title = job_title.strip() if job_title else None
         department = data.get("department")
+        department = department.strip() if department else None
         experience_years = data.get("experience_years")
         if experience_years == "" or experience_years is None:
             experience_years = None
@@ -38,19 +42,38 @@ def create_worker(decoded_payload=None):
             except (ValueError, TypeError):
                 experience_years = None
         working_hours = data.get("working_hours")
+        if working_hours == "" or working_hours is None:
+            working_hours = None
+        else:
+            try:
+                working_hours = int(working_hours)
+            except (ValueError, TypeError):
+                working_hours = None
         work_mode = data.get("work_mode")
+        work_mode = work_mode.strip() if work_mode else None
         office_location = data.get("office_location")
+        office_location = office_location.strip() if office_location else None
         github_url = data.get("github_url")
+        github_url = github_url.strip() if github_url else None
         linkedin_url = data.get("linkedin_url")
+        linkedin_url = linkedin_url.strip() if linkedin_url else None
         portfolio_url = data.get("portfolio_url")
+        portfolio_url = portfolio_url.strip() if portfolio_url else None
         address_line1 = data.get("address_line1")
+        address_line1 = address_line1.strip() if address_line1 else None
         address_line2 = data.get("address_line2")
+        address_line2 = address_line2.strip() if address_line2 else None
         city = data.get("city")
+        city = city.strip() if city else None
         state = data.get("state")
+        state = state.strip() if state else None
         country = data.get("country")
+        country = country.strip() if country else None
         pincode = data.get("pincode")
+        pincode = pincode.strip() if pincode else None
         joining_date = parse_date(data.get("joining_date"))
         employment_type = data.get("employment_type")
+        employment_type = employment_type.strip() if employment_type else None
         status = data.get("status", "ACTIVE")
 
         if not all([email, first_name, last_name]):
@@ -221,7 +244,7 @@ def update_worker(worker_id, decoded_payload=None):
         if "last_name" in data:
             worker.last_name = data["last_name"]
         if "phone" in data:
-            worker.phone = data["phone"]
+            worker.phone = data["phone"].strip() if data["phone"] else None
         if "email" in data:
             new_email = data["email"]
             # Check if email is already taken by another user
@@ -258,9 +281,9 @@ def update_worker(worker_id, decoded_payload=None):
         if "is_worker" in data:
             worker.is_worker = data["is_worker"]
         if "job_title" in data:
-            worker.job_title = data["job_title"]
+            worker.job_title = data["job_title"].strip() if data["job_title"] else None
         if "department" in data:
-            worker.department = data["department"]
+            worker.department = data["department"].strip() if data["department"] else None
         if "experience_years" in data:
             exp_val = data["experience_years"]
             if exp_val == "" or exp_val is None:
@@ -271,37 +294,44 @@ def update_worker(worker_id, decoded_payload=None):
                 except (ValueError, TypeError):
                     worker.experience_years = None
         if "working_hours" in data:
-            worker.working_hours = data["working_hours"]
+            wh_val = data["working_hours"]
+            if wh_val == "" or wh_val is None:
+                worker.working_hours = None
+            else:
+                try:
+                    worker.working_hours = int(wh_val)
+                except (ValueError, TypeError):
+                    worker.working_hours = None
         if "work_mode" in data:
-            worker.work_mode = data["work_mode"]
+            worker.work_mode = data["work_mode"].strip() if data["work_mode"] else None
         if "office_location" in data:
-            worker.office_location = data["office_location"]
+            worker.office_location = data["office_location"].strip() if data["office_location"] else None
         if "github_url" in data:
-            worker.github_url = data["github_url"]
+            worker.github_url = data["github_url"].strip() if data["github_url"] else None
         if "linkedin_url" in data:
-            worker.linkedin_url = data["linkedin_url"]
+            worker.linkedin_url = data["linkedin_url"].strip() if data["linkedin_url"] else None
         if "portfolio_url" in data:
-            worker.portfolio_url = data["portfolio_url"]
+            worker.portfolio_url = data["portfolio_url"].strip() if data["portfolio_url"] else None
         if "address_line1" in data:
-            worker.address_line1 = data["address_line1"]
+            worker.address_line1 = data["address_line1"].strip() if data["address_line1"] else None
         if "address_line2" in data:
-            worker.address_line2 = data["address_line2"]
+            worker.address_line2 = data["address_line2"].strip() if data["address_line2"] else None
         if "city" in data:
-            worker.city = data["city"]
+            worker.city = data["city"].strip() if data["city"] else None
         if "state" in data:
-            worker.state = data["state"]
+            worker.state = data["state"].strip() if data["state"] else None
         if "country" in data:
-            worker.country = data["country"]
+            worker.country = data["country"].strip() if data["country"] else None
         if "pincode" in data:
-            worker.pincode = data["pincode"]
+            worker.pincode = data["pincode"].strip() if data["pincode"] else None
         if "joining_date" in data:
             worker.joining_date = parse_date(data["joining_date"])
         if "employment_type" in data:
-            worker.employment_type = data["employment_type"]
+            worker.employment_type = data["employment_type"].strip() if data["employment_type"] else None
         if "status" in data:
             worker.status = data["status"]
         if "remark" in data:
-            worker.remark = data["remark"]
+            worker.remark = data["remark"].strip() if data["remark"] else None
             
         if "is_active" in data and user:
             user.is_active = data["is_active"]
